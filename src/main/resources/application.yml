@@ -14,6 +14,9 @@ telegram:
       max-attempts: 3
       delay: 10000
 system:
+  caches:
+    evict:
+      cron: 0 * * * * ?
   executor:
     core-size: 4
     max-size: 8
@@ -26,16 +29,24 @@ system:
         period: 1m
       - requests: 25
         period: 1d
+  retryer:
+    maxAttempts: 3
+    period: 100ms
+    maxPeriod: 1s
 
-feign:
-  client:
-    config:
-      default:
-        connectTimeout: 100
-        readTimeout: 500
-        loggerLevel: basic
-        decode404: false
-        retryer: com.anagorny.gpxanimatorbot.services.impl.RetryerImpl
+spring:
+  cache:
+    cache-names: camera-snapshots-cache, road-conditions-cache
+    caffeine:
+      spec: expireAfterAccess=60s
+
+road-conditions-external-service:
+  url: https://www.cyprusski.com
+camera-snapshot:
+  url: https://s91.ipcamlive.com/streams/5b0re6pkvihcznbjq/snapshot.jpg
+  timeouts:
+    connect: 500ms
+    read: 1s
 
 #Logging params
 logging:

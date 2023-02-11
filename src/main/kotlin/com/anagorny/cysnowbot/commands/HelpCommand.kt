@@ -16,8 +16,7 @@ class HelpCommand(private val context: ApplicationContext) :
     BotCommand("help", "Get all the commands this bot provides") {
 
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>) {
-        val helpMessageBuilder = StringBuilder("Just send a *.gpx file and get a video of the route in the answer.")
-            .append("\n\nRegistered commands for this bot:\n\n")
+        val helpMessageBuilder = StringBuilder("Registered commands for this bot:\n\n")
         for (botCommand in commandRegistry().registeredCommands) {
             helpMessageBuilder.append(botCommand.toString()).append("\n\n")
         }

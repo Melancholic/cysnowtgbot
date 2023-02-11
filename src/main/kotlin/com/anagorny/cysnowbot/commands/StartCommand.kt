@@ -15,7 +15,7 @@ class StartCommand : BotCommand("start", "Welcome command") {
     override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<out String>) {
         val messageBuilder = StringBuilder()
         messageBuilder.append("Welcome ${user.firstName}!\n")
-        messageBuilder.append("this bot will make cool videos from your GPX.\n")
+        messageBuilder.append("this bot will notify you about Cyprus mountain roads status.\n")
         messageBuilder.append("To learn how to use it, try /help")
 
         val answer = SendMessage()

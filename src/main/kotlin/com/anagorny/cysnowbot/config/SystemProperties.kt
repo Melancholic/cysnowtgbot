@@ -9,18 +9,18 @@ import java.time.Duration
 data class SystemProperties(
     val workDir: String,
     val rateLimiting: RateLimiterProperties = RateLimiterProperties(),
-    val executor: ExecutorProperties = ExecutorProperties()
+    val executor: ExecutorProperties = ExecutorProperties(),
+    val retryer: RetryerProperties = RetryerProperties()
 ) {
     @ConstructorBinding
     data class ExecutorProperties(val coreSize: Int = 5, val maxSize: Int = 10)
 }
 
 @ConstructorBinding
-@ConfigurationProperties(prefix = "retryer")
 data class RetryerProperties(
-    val maxAttempts: Int,
-    val period: Duration,
-    val maxPeriod: Duration,
+    val maxAttempts: Int = 3,
+    val period: Duration = Duration.ofSeconds(1),
+    val maxPeriod: Duration = Duration.ofSeconds(5),
 )
 
 data class RateLimiterProperties(
