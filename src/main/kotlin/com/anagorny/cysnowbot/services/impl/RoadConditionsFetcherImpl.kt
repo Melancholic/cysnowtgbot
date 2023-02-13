@@ -33,10 +33,12 @@ class RoadConditionsFetcherImpl(
         return scope.runAsync {
             try {
                 val doc: Document = Jsoup.connect(roadConditionsExternalServiceUrl).get()
-                RoadConditionsContainer(
+                val result = RoadConditionsContainer(
                     roads = extractRoadsState(doc),
                     updatedAt = extractUpdatedTime(doc),
                 )
+                logger.info{ "Current Road Conditions successfully fetched"}
+                result
             } catch (e: Exception) {
                 logger.error("Can't fetch road conditions from external service", e)
                 null

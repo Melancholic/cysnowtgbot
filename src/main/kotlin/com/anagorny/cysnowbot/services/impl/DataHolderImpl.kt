@@ -1,5 +1,6 @@
 package com.anagorny.cysnowbot.services.impl
 
+import com.anagorny.cysnowbot.helpers.removeFile
 import com.anagorny.cysnowbot.models.CameraSnapshotContainer
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.services.CameraSnapshotFetcher
@@ -38,8 +39,8 @@ class DataHolderImpl(
     protected fun updateState() {
         runBlocking {
             logger.info { "Updating state running" }
-            val cameraSnapshotResultDef = cameraSnapshotFetcher.fetchCameraSnapshot()
             val roadConditionsResultDef = roadConditionsFetcher.fetchRoadConditions()
+            val cameraSnapshotResultDef = cameraSnapshotFetcher.fetchCameraSnapshot()
 
             val roadConditionsResult = roadConditionsResultDef.await() ?: RoadConditionsContainer()
             if (roadConditionsContainer == null) {
@@ -52,7 +53,10 @@ class DataHolderImpl(
             if (cameraSnapshotContainer == null) {
                 cameraSnapshotContainer = AtomicReference(cameraSnapshotResult)
             } else {
-                cameraSnapshotContainer?.updateAndGet { cameraSnapshotResult }
+                cameraSnapshotContainer?.updateAndGet {
+                    it.image?.let { oldFile -> removeFile(oldFile, logger) }
+                    cameraSnapshotResult
+                }
             }
 
             logger.info { "Updating state completed" }

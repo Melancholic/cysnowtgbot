@@ -6,7 +6,6 @@ import com.anagorny.cysnowbot.services.CameraSnapshotFetcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import mu.KLogging
-import org.apache.commons.io.FileUtils
 import org.jsoup.Jsoup
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -14,12 +13,9 @@ import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
-import org.springframework.web.client.RestTemplate
 import java.io.File
 import java.lang.String.format
-import java.net.URL
 import java.nio.file.Files
-import java.nio.file.Paths
 import java.time.Duration
 import java.util.*
 
@@ -46,6 +42,7 @@ class CameraSnapshotFetcherImpl(
             } else {
                 val file = File.createTempFile("camera-snapshot", ".jpg")
                 Files.write(file.toPath(), imageBytes)
+                logger.info{ "Live camera snapshot successfully saved to '${file.absolutePath}"}
                 CameraSnapshotContainer(file)
             }
         }

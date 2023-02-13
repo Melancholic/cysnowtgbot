@@ -14,9 +14,6 @@ telegram:
       max-attempts: 3
       delay: 10000
 system:
-  caches:
-    evict:
-      cron: 0 * * * * ?
   executor:
     core-size: 4
     max-size: 8

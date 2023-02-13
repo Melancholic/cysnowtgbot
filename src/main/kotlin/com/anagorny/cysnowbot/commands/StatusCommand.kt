@@ -4,9 +4,11 @@ import com.anagorny.cysnowbot.helpers.withErrorLogging
 import com.anagorny.cysnowbot.models.CameraSnapshotContainer
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.services.DataHolder
+import com.anagorny.cysnowbot.services.RateLimiter
 import mu.KLogging
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand
+import org.telegram.telegrambots.meta.api.methods.ActionType
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
 import org.telegram.telegrambots.meta.api.objects.Chat
@@ -18,10 +20,16 @@ import java.time.format.FormatStyle
 
 @Component
 class StatusCommand(
-    private val dataHolder: DataHolder
-) : BotCommand("status", "Status command") {
+    private val dataHolder: DataHolder,
+    rateLimiter: RateLimiter
+) : RateLimitedCommand(
+    "get_road_status",
+    "Returns the latest roads conditions with capture from live camera",
+    rateLimiter
+) {
 
-    override fun execute(sender: AbsSender, user: User, chat: Chat, arguments: Array<out String>) {
+    override fun doExecute(sender: AbsSender, user: User, chat: Chat, arguments: Array<out String>) {
+        sentAction(sender, chat, ActionType.TYPING)
         val roadConditions = dataHolder.getRoadConditions()
         val cameraSnapshot = dataHolder.getCameraSnapshot()
 
@@ -61,7 +69,7 @@ class StatusCommand(
             logger::error,
             "Error while processing command from user='${user.userName}' to chat=:'{${chat.title}}'"
         ) {
-            if (cameraSnapshot.image == null) {
+            if (cameraSnapshot.image == null || !cameraSnapshot.image.exists()) {
                 sender.execute(SendMessage().apply {
                     chatId = chat.id.toString()
                     text = makeCaption(roadConditions)
