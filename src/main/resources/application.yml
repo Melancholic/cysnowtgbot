@@ -42,8 +42,9 @@ spring:
 
 road-conditions-external-service:
   url: https://www.cyprusski.com
-camera-snapshot:
-  url: https://s91.ipcamlive.com/streams/5b0re6pkvihcznbjq/snapshot.jpg
+live-camera:
+  stream-page-url: https://ipcamlive.com/player/player.php?alias=jubileetroodos
+  snapshot-url-template: https://s91.ipcamlive.com/streams/%s/snapshot.jpg
   timeouts:
     connect: 500ms
     read: 1s

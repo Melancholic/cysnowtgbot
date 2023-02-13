@@ -4,8 +4,8 @@ import org.apache.commons.lang3.StringUtils
 import java.time.LocalDateTime
 
 data class RoadConditionsContainer(
-    val roads: List<RoadStateContainer>,
-    val updatedAt: LocalDateTime?,
+    val roads: List<RoadStateContainer> = emptyList(),
+    val updatedAt: LocalDateTime? = null,
     val timestamp: LocalDateTime = LocalDateTime.now()
 ) {
     override fun toString(): String {

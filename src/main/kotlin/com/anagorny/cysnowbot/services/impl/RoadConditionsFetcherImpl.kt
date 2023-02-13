@@ -1,41 +1,46 @@
-package com.anagorny.cysnowbot.clients.impl
+package com.anagorny.cysnowbot.services.impl
 
-import com.anagorny.cysnowbot.clients.RoadConditionsClient
+import com.anagorny.cysnowbot.helpers.runAsync
+import com.anagorny.cysnowbot.services.RoadConditionsFetcher
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.models.RoadStateContainer
 import com.anagorny.cysnowbot.models.RoadStatus
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import mu.KLogging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
-import org.jsoup.nodes.Element
-import org.jsoup.select.Elements
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.cache.annotation.CacheEvict
 import org.springframework.cache.annotation.Cacheable
+import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.*
 
 @Service
-class RoadConditionsClientImpl(
+class RoadConditionsFetcherImpl(
+    @Qualifier("mainFlowCoroutineScope")
+    private val scope: CoroutineScope,
     @Value("\${road-conditions-external-service.url}") val roadConditionsExternalServiceUrl: String
-) : RoadConditionsClient {
+) : RoadConditionsFetcher {
     private val FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm")
 
-    @Cacheable(value = ["road-conditions-cache"])
-    override fun fetchRoadConditions(): Optional<RoadConditionsContainer> {
-        return try {
-            val doc: Document = Jsoup.connect(roadConditionsExternalServiceUrl).get()
-            Optional.of(
+    override suspend fun fetchRoadConditions(): Deferred<RoadConditionsContainer?> {
+        return scope.runAsync {
+            try {
+                val doc: Document = Jsoup.connect(roadConditionsExternalServiceUrl).get()
                 RoadConditionsContainer(
                     roads = extractRoadsState(doc),
                     updatedAt = extractUpdatedTime(doc),
                 )
-            )
-        } catch (e: Exception) {
-            logger.error("Can't fetch road conditions from external service", e)
-            Optional.empty()
+            } catch (e: Exception) {
+                logger.error("Can't fetch road conditions from external service", e)
+                null
+            }
         }
     }
 
