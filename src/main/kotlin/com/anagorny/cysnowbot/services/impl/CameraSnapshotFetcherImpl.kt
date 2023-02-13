@@ -52,11 +52,18 @@ class CameraSnapshotFetcherImpl(
     }
 
     private fun tryDownloadSnapshotImage(): ByteArray? {
-        if (streamId == null) streamId = retrieveStreamId(liveStreamPageUrl)
-        var response = downloadImage(format(snapshotUrlTemplate, streamId))
+        var response = downloadImage(
+            format(
+                snapshotUrlTemplate, host ?: retrieveHost(liveStreamPageUrl), streamId
+                    ?: retrieveStreamId(liveStreamPageUrl)
+            )
+        )
         if (response == null) {
+            host = retrieveHost(liveStreamPageUrl)
+                ?: throw IllegalStateException("Couldn't fetch a live camera snapshot host")
             streamId = retrieveStreamId(liveStreamPageUrl)
-            response = downloadImage(format(snapshotUrlTemplate, streamId))
+                ?: throw IllegalStateException("Couldn't fetch a live camera stream id")
+            response = downloadImage(format(snapshotUrlTemplate, host, streamId))
         }
         return response
     }
@@ -77,12 +84,20 @@ class CameraSnapshotFetcherImpl(
     protected fun retrieveStreamId(urlToLiveStream: String): String? {
         val html: String? = Jsoup.connect(urlToLiveStream)?.get()?.html()
         val streamId = html?.let { "var streamid = '(.+)';".toRegex().find(it)?.groups?.get(1)?.value }
-        logger.info { "Fetched streamId=${streamId} for Trodos live camera." }
+        logger.info { "Fetched streamId=${streamId} for Trodos live camera snapshot." }
         return streamId
+    }
+
+    protected fun retrieveHost(urlToLiveStream: String): String? {
+        val html: String? = Jsoup.connect(urlToLiveStream)?.get()?.html()
+        val host = html?.let { "var address = '(.+)';".toRegex().find(it)?.groups?.get(1)?.value }
+        logger.info { "Fetched host=${host} for Trodos live camera snapshot." }
+        return host
     }
 
     companion object : KLogging() {
         var streamId: String? = null
+        var host: String? = null
     }
 
 }

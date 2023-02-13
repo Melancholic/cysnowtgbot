@@ -41,10 +41,10 @@ spring:
       spec: expireAfterAccess=60s
 
 road-conditions-external-service:
-  url: https://www.cyprusski.com
+  url: 'https://www.cyprusski.com'
 live-camera:
-  stream-page-url: https://ipcamlive.com/player/player.php?alias=jubileetroodos
-  snapshot-url-template: https://s91.ipcamlive.com/streams/%s/snapshot.jpg
+  stream-page-url: 'https://ipcamlive.com/player/player.php?alias=jubileetroodos'
+  snapshot-url-template: '%s/streams/%s/snapshot.jpg'
   timeouts:
     connect: 500ms
     read: 1s
