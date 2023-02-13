@@ -1,0 +1,16 @@
+version: "2"
+services:
+  cy-snow-telegram-bot:
+    restart: always
+    container_name: cy-snow-telegram-bot_prod
+    build:
+      context: ./
+      args:
+        JAR_FILE: ./*cy-snow-telegram-bot-*.jar
+        ENTRY_POINT: ./entry_point.sh
+    volumes:
+      - /tmp/cy-snow-telegram-bot-PROD:/tmp/
+      - /var/cy-snow-telegram-bot-PROD/:/var/cy-snow-telegram-bot/
+    env_file:
+      - ./COMMON_ENV.env
+      - ./credentials/ENV_INIT_PROD.env
