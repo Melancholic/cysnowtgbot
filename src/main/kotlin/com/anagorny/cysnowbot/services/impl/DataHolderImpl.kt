@@ -42,24 +42,39 @@ class DataHolderImpl(
             val roadConditionsResultDef = roadConditionsFetcher.fetchRoadConditions()
             val cameraSnapshotResultDef = cameraSnapshotFetcher.fetchCameraSnapshot()
 
-            val roadConditionsResult = roadConditionsResultDef.await() ?: RoadConditionsContainer()
-            if (roadConditionsContainer == null) {
-                roadConditionsContainer = AtomicReference(roadConditionsResult)
-            } else {
-                roadConditionsContainer?.updateAndGet { roadConditionsResult }
+            try {
+                val roadConditionsResult = roadConditionsResultDef.await() ?: RoadConditionsContainer()
+                if (roadConditionsContainer == null) {
+                    roadConditionsContainer = AtomicReference(roadConditionsResult)
+                } else {
+                    roadConditionsContainer?.updateAndGet { roadConditionsResult }
+                }
+            } catch (e: Exception) {
+                logger.error { "Error while updating state of road conditions" }
+                roadConditionsContainer = null
             }
 
-            val cameraSnapshotResult = cameraSnapshotResultDef.await() ?: CameraSnapshotContainer()
-            if (cameraSnapshotContainer == null) {
-                cameraSnapshotContainer = AtomicReference(cameraSnapshotResult)
-            } else {
-                cameraSnapshotContainer?.updateAndGet {
-                    it.image?.let { oldFile -> removeFile(oldFile, logger) }
-                    cameraSnapshotResult
-                }
+            try {
+                val cameraSnapshotResult = cameraSnapshotResultDef.await() ?: CameraSnapshotContainer()
+                updateCameraSnapshotContainer(cameraSnapshotResult)
+            } catch (e: Exception) {
+                logger.error { "Error while updating state of live camera snapshot" }
+                updateCameraSnapshotContainer(null)
+                cameraSnapshotContainer = null
             }
 
             logger.info { "Updating state completed" }
+        }
+    }
+
+    private fun updateCameraSnapshotContainer(newState: CameraSnapshotContainer?) {
+        if (cameraSnapshotContainer?.get() != null) {
+            removeFile(cameraSnapshotContainer?.get()?.image, logger)
+        }
+        if (cameraSnapshotContainer != null) {
+            cameraSnapshotContainer!!.updateAndGet { newState }
+        } else {
+            cameraSnapshotContainer = AtomicReference(newState)
         }
     }
 

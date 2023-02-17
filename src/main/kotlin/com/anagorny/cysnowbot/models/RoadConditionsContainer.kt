@@ -27,7 +27,7 @@ enum class RoadStatus(
     val message: String,
     val icon: String
 ) {
-    OPEN("OPEN", "🔴"),
+    OPEN("OPEN for all Vehicles", "✅"),
     CLOSED("CLOSED", "⛔️"),
     AWD_OR_CHAINS_ONLY("4X4 or car with chains", "⚠️"),
     UNKNOWN("Unknown", "❔");
