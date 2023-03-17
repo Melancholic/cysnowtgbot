@@ -50,7 +50,7 @@ class DataHolderImpl(
                     roadConditionsContainer?.updateAndGet { roadConditionsResult }
                 }
             } catch (e: Exception) {
-                logger.error { "Error while updating state of road conditions" }
+                logger.error(e) { "Error while updating state of road conditions" }
                 roadConditionsContainer = null
             }
 
@@ -58,7 +58,7 @@ class DataHolderImpl(
                 val cameraSnapshotResult = cameraSnapshotResultDef.await() ?: CameraSnapshotContainer()
                 updateCameraSnapshotContainer(cameraSnapshotResult)
             } catch (e: Exception) {
-                logger.error { "Error while updating state of live camera snapshot" }
+                logger.error(e) { "Error while updating state of live camera snapshot" }
                 updateCameraSnapshotContainer(null)
                 cameraSnapshotContainer = null
             }
