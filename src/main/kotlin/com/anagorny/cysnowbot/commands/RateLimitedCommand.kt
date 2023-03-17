@@ -14,7 +14,7 @@ abstract class RateLimitedCommand(
 ) : Command(commandIdentifier, description) {
 
     override fun processMessage(sender: AbsSender, message: Message, arguments: Array<out String>) {
-        if (rateLimiter.isRequestAllowed(getRLKey(message.chat, message.from))) {
+        if (rlChecking(message.chat, message.from)) {
             super.processMessage(sender, message, arguments)
         } else {
             val minutes = max(rateLimiter.howLongForAllow(getRLKey(message.chat, message.from)).toMinutes(), 1)
@@ -34,6 +34,7 @@ abstract class RateLimitedCommand(
 
     private fun rlChecking(chat: Chat, user: User): Boolean {
         if (rateLimiter.isRateLimitingEnabled()) {
+            return rateLimiter.isRequestAllowed(getRLKey(chat, user))
         }
         return true
     }

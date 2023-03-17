@@ -70,7 +70,7 @@ class CameraSnapshotFetcherImpl(
         if (entity.statusCode == HttpStatus.OK) {
             entity.body
         } else {
-            logger.error("Error downloading file from '$url', response status: ${entity.statusCodeValue}")
+            logger.error("Error downloading file from '$url', response status: ${entity.statusCode}")
             null
         }
     } catch (e: java.lang.Exception) {
