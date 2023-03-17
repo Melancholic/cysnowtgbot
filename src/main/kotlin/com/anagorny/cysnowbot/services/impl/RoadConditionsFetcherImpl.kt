@@ -1,12 +1,10 @@
 package com.anagorny.cysnowbot.services.impl
 
 import com.anagorny.cysnowbot.helpers.runAsync
-import com.anagorny.cysnowbot.services.RoadConditionsFetcher
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.models.RoadStateContainer
 import com.anagorny.cysnowbot.models.RoadStatus
-import com.google.common.util.concurrent.Futures
-import com.google.common.util.concurrent.ListenableFuture
+import com.anagorny.cysnowbot.services.RoadConditionsFetcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import mu.KLogging
@@ -14,8 +12,6 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.cache.annotation.Cacheable
-import org.springframework.scheduling.annotation.Async
 import org.springframework.stereotype.Service
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -37,7 +33,7 @@ class RoadConditionsFetcherImpl(
                     roads = extractRoadsState(doc),
                     updatedAt = extractUpdatedTime(doc),
                 )
-                logger.info{ "Current Road Conditions successfully fetched"}
+                logger.info { "Current Road Conditions successfully fetched" }
                 result
             } catch (e: Exception) {
                 logger.error("Can't fetch road conditions from external service", e)

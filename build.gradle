@@ -1,10 +1,11 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 buildscript {
     ext {
         kotlin_version = "1.8.10"
         corutines_version = "1.6.4"
-        spring_boot_version = "2.7.9"
-        spring_cloud_version = "2021.0.5"
-        telegrambots_version = "6.3.0"
+        spring_boot_version = "3.0.4"
+        spring_cloud_version = "2022.0.1"
+        telegrambots_version = "6.5.0"
     }
     repositories {
         mavenCentral()
@@ -16,14 +17,12 @@ buildscript {
 plugins {
     id "org.jetbrains.kotlin.jvm" version "$kotlin_version"
     id "org.jetbrains.kotlin.plugin.spring" version "$kotlin_version"
-    id "org.jetbrains.kotlin.plugin.allopen" version "$kotlin_version"
     id 'org.springframework.boot' version "$spring_boot_version"
     id "io.spring.dependency-management" version "1.1.0"
     id "nebula.release" version "17.2.0"
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_17
 
 ext {
 }
@@ -35,7 +34,6 @@ dependencyManagement {
     }
 }
 dependencies {
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$corutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:$corutines_version"
     implementation 'io.github.microutils:kotlin-logging-jvm:3.0.4'
@@ -82,9 +80,14 @@ task distrib(type: Zip, dependsOn: bootJar) {
         }
     }
 
-
-    archiveName "${baseName}.zip"
-
+    archiveFileName = provider { "${baseName}.zip" }
 }
 
 build.dependsOn(distrib)
+
+tasks.withType(KotlinCompile) {
+    kotlinOptions {
+        freeCompilerArgs = ['-Xjsr305=strict']
+        jvmTarget = '17'
+    }
+}

@@ -3,6 +3,7 @@ package com.anagorny.cysnowbot.services
 import com.anagorny.cysnowbot.config.TelegramProperties
 import com.anagorny.cysnowbot.handlers.MainHandler
 import com.anagorny.cysnowbot.helpers.launchAsync
+import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import mu.KLogging
 import org.slf4j.MDC
@@ -15,7 +16,6 @@ import org.telegram.telegrambots.extensions.bots.commandbot.commands.IBotCommand
 import org.telegram.telegrambots.meta.api.methods.ActionType
 import org.telegram.telegrambots.meta.api.methods.send.SendChatAction
 import org.telegram.telegrambots.meta.api.objects.Update
-import javax.annotation.PostConstruct
 
 
 @Service
