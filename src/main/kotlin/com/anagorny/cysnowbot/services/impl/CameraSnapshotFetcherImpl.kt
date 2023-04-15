@@ -42,27 +42,19 @@ class CameraSnapshotFetcherImpl(
             } else {
                 val file = File.createTempFile("camera-snapshot", ".jpg")
                 Files.write(file.toPath(), imageBytes)
-                logger.info{ "Live camera snapshot successfully saved to '${file.absolutePath}"}
+                logger.info { "Live camera snapshot successfully saved to '${file.absolutePath}" }
                 CameraSnapshotContainer(file)
             }
         }
     }
 
     private fun tryDownloadSnapshotImage(): ByteArray? {
-        var response = downloadImage(
-            format(
-                snapshotUrlTemplate, host ?: retrieveHost(liveStreamPageUrl), streamId
-                    ?: retrieveStreamId(liveStreamPageUrl)
-            )
-        )
-        if (response == null) {
-            host = retrieveHost(liveStreamPageUrl)
-                ?: throw IllegalStateException("Couldn't fetch a live camera snapshot host")
-            streamId = retrieveStreamId(liveStreamPageUrl)
-                ?: throw IllegalStateException("Couldn't fetch a live camera stream id")
-            response = downloadImage(format(snapshotUrlTemplate, host, streamId))
-        }
-        return response
+        //ToDo redefine host and stream id only in case when previous values are outdated
+        val host = retrieveHost(liveStreamPageUrl)
+            ?: throw IllegalStateException("Couldn't fetch a live camera snapshot host")
+        val streamId = retrieveStreamId(liveStreamPageUrl)
+            ?: throw IllegalStateException("Couldn't fetch a live camera stream id")
+        return downloadImage(format(snapshotUrlTemplate, host, streamId))
     }
 
     private fun downloadImage(url: String): ByteArray? = try {
@@ -92,9 +84,5 @@ class CameraSnapshotFetcherImpl(
         return host
     }
 
-    companion object : KLogging() {
-        var streamId: String? = null
-        var host: String? = null
-    }
-
+    companion object : KLogging()
 }
