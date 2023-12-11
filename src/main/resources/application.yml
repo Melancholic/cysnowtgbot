@@ -38,7 +38,7 @@ spring:
       spec: expireAfterAccess=60s
 
 road-conditions-external-service:
-  url: 'https://www.cyprusski.com'
+  url: 'https://www.cyprusski.com/piste-road-conditions'
 live-camera:
   stream-page-url: 'https://ipcamlive.com/player/player.php?alias=jubileetroodos'
   snapshot-url-template: '%s/streams/%s/snapshot.jpg'
