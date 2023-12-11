@@ -43,35 +43,26 @@ class RoadConditionsFetcherImpl(
     }
 
     private fun extractUpdatedTime(doc: Document): LocalDateTime? = doc
-        .select("#block-views-block-piste-road-conditions-block-4-2 > div > div > div > div.views-field-changed > span.field-content")
-        ?.first()?.textNodes()?.first()?.text()
+        .selectXpath("//*[@id=\"block-ski-cyprus-content\"]/div/div/div[2]/div[1]/span[2]/time").text()
         ?.let { LocalDateTime.parse(it, FORMATTER) }
 
     private fun extractRoadsState(doc: Document): List<RoadStateContainer> =
-        doc.select("#block-views-block-piste-road-conditions-block-4-2 > div > div > div > div.pst-rd-cont > div > div > div.field-type-list-string")
+        doc.selectXpath("//*[@id=\"block-ski-cyprus-content\"]/div/div/div[2]/div[2]/div/div")
+            ?.first()
+            ?.children()
             ?.asSequence()
-            ?.map {
-                val routeParts = it.select("div.field-label")
-                    ?.first()
-                    ?.textNodes()
-                    ?.first()
-                    ?.text()
-                    ?.split("-") ?: emptyList()
-                var src: String? = null
-                var dst: String? = null
-                if (routeParts.size == 2) {
-                    src = routeParts[0].trim()
-                    dst = routeParts[1].trim()
-                }
-                val roadStatus = it.select("div.field-items > div.field-item")?.first()?.textNodes()?.first()?.text()
-                return@map RoadStateContainer(
-                    src = src,
-                    dst = dst,
-                    roadStatus = RoadStatus.parseFromText(roadStatus)
-                )
-            }
-            ?.toList() ?: emptyList()
+            ?.mapNotNull { line ->
+                val route = line.getElementsByClass("field-label")?.text()
+                    ?.split("-")
 
+                val from = route?.getOrNull(0)?.trim()
+                val to = route?.getOrNull(1)?.trim()
+
+                val roadStatus = line.getElementsByClass("field__item")?.text()?.trim()
+                return@mapNotNull RoadStateContainer(from, to, RoadStatus.parseFromText(roadStatus))
+            }
+            ?.toList()
+            ?: emptyList()
 
     companion object : KLogging()
 }
