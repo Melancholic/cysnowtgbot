@@ -1,13 +1,13 @@
 package com.anagorny.cysnowbot.commands
 
 import com.anagorny.cysnowbot.helpers.withErrorLogging
+import com.anagorny.cysnowbot.models.AggregatedDataContainer
 import com.anagorny.cysnowbot.models.CameraSnapshotContainer
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.services.DataHolder
 import com.anagorny.cysnowbot.services.RateLimiter
 import mu.KLogging
 import org.springframework.stereotype.Component
-import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand
 import org.telegram.telegrambots.meta.api.methods.ActionType
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
@@ -30,13 +30,12 @@ class StatusCommand(
 
     override fun doExecute(sender: AbsSender, user: User, chat: Chat, arguments: Array<out String>) {
         sentAction(sender, chat, ActionType.TYPING)
-        val roadConditions = dataHolder.getRoadConditions()
-        val cameraSnapshot = dataHolder.getCameraSnapshot()
+        val data = dataHolder.getData()
 
-        if (roadConditions.roads.isEmpty()) {
+        if (data.roadConditions.roads.isEmpty()) {
             doError(ResponseErrorsType.NOT_PRESENT_ERR, sender, user, chat)
         } else {
-            doResponse(sender, user, chat, roadConditions, cameraSnapshot)
+            doResponse(sender, user, chat, data)
         }
     }
 
@@ -62,24 +61,23 @@ class StatusCommand(
         sender: AbsSender,
         user: User,
         chat: Chat,
-        roadConditions: RoadConditionsContainer,
-        cameraSnapshot: CameraSnapshotContainer
+        data: AggregatedDataContainer
     ) {
         withErrorLogging(
             logger::error,
             "Error while processing command from user='${user.userName}' to chat=:'{${chat.title}}'"
         ) {
-            if (cameraSnapshot.image == null || !cameraSnapshot.image.exists()) {
+            if (data.cameraSnapshot.image == null || !data.cameraSnapshot.image.exists()) {
                 sender.execute(SendMessage().apply {
                     chatId = chat.id.toString()
-                    text = makeCaption(roadConditions)
+                    text = makeCaption(data.roadConditions)
                     parseMode = "HTML"
                 })
             } else {
                 sender.execute(SendPhoto().apply {
-                    cameraSnapshot.image.let { photo = InputFile(it) }
+                    data.cameraSnapshot.image.let { photo = InputFile(it) }
                     chatId = chat.id.toString()
-                    caption = makeCaption(roadConditions)
+                    caption = makeCaption(data.roadConditions)
                     parseMode = "HTML"
                 })
             }
@@ -98,7 +96,6 @@ class StatusCommand(
             )
         }
     }
-
 
     companion object : KLogging() {
         enum class ResponseErrorsType(val errorMsg: String? = null) {

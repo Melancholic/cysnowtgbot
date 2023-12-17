@@ -4,7 +4,7 @@ import com.anagorny.cysnowbot.helpers.runAsync
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.models.RoadStateContainer
 import com.anagorny.cysnowbot.models.RoadStatus
-import com.anagorny.cysnowbot.services.RoadConditionsFetcher
+import com.anagorny.cysnowbot.services.Fetcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import mu.KLogging
@@ -21,11 +21,11 @@ import java.util.*
 class RoadConditionsFetcherImpl(
     @Qualifier("mainFlowCoroutineScope")
     private val scope: CoroutineScope,
-    @Value("\${road-conditions-external-service.url}") val roadConditionsExternalServiceUrl: String
-) : RoadConditionsFetcher {
-    private val FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm")
+     @Value("\${road-conditions-external-service.url}") val roadConditionsExternalServiceUrl: String
+) : Fetcher<RoadConditionsContainer> {
+    private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm")
 
-    override suspend fun fetchRoadConditions(): Deferred<RoadConditionsContainer?> {
+    override suspend fun fetchAsync(): Deferred<RoadConditionsContainer?> {
         return scope.runAsync {
             try {
                 val doc: Document = Jsoup.connect(roadConditionsExternalServiceUrl).get()
@@ -44,7 +44,7 @@ class RoadConditionsFetcherImpl(
 
     private fun extractUpdatedTime(doc: Document): LocalDateTime? = doc
         .selectXpath("//*[@id=\"block-ski-cyprus-content\"]/div/div/div[2]/div[1]/span[2]/time").text()
-        ?.let { LocalDateTime.parse(it, FORMATTER) }
+        ?.let { LocalDateTime.parse(it, dateTimeFormatter) }
 
     private fun extractRoadsState(doc: Document): List<RoadStateContainer> =
         doc.selectXpath("//*[@id=\"block-ski-cyprus-content\"]/div/div/div[2]/div[2]/div/div")
