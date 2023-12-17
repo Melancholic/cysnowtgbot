@@ -11,10 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
+import org.telegram.telegrambots.bots.DefaultBotOptions
 import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.IBotCommand
-import org.telegram.telegrambots.meta.api.methods.ActionType
-import org.telegram.telegrambots.meta.api.methods.send.SendChatAction
 import org.telegram.telegrambots.meta.api.objects.Update
 
 
@@ -24,7 +23,11 @@ class MainTelegramBotService(
     commands: Set<IBotCommand>,
     @Qualifier("mainFlowCoroutineScope")
     private val scope: CoroutineScope
-) : TelegramLongPollingCommandBot() {
+) : TelegramLongPollingCommandBot(
+    DefaultBotOptions(),
+    true,
+    telegramProperties.bot.token
+) {
 
     @set:Autowired
     @set:Lazy
@@ -32,6 +35,7 @@ class MainTelegramBotService(
 
     init {
         registerAll(*commands.toTypedArray())
+        logger.info { "TelegramBot `${telegramProperties.bot.name}` successfully initialized." }
     }
 
     @PostConstruct
@@ -40,22 +44,12 @@ class MainTelegramBotService(
     }
 
     override fun getBotUsername() = telegramProperties.bot.name
-    override fun getBotToken() = telegramProperties.bot.token
 
     override fun processNonCommandUpdate(update: Update) {
         scope.launchAsync {
             MDC.put("correlationId", "${update.message.chatId}-${update.message.messageId}")
             mainHandler.handle(update)
         }.invokeOnCompletion { MDC.clear() }
-    }
-
-    fun sentAction(chatId: Long, action: ActionType) {
-        execute(
-            SendChatAction.builder()
-                .chatId(chatId)
-                .action(action.toString())
-                .build()
-        )
     }
 
     companion object : KLogging()
