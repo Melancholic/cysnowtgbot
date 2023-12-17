@@ -26,6 +26,9 @@ system:
         period: 1m
       - requests: 25
         period: 1d
+  timeouts:
+    connect: 1s
+    read: 2s
   retryer:
     maxAttempts: 3
     period: 100ms
@@ -40,11 +43,10 @@ spring:
 road-conditions-external-service:
   url: 'https://www.cyprusski.com/piste-road-conditions'
 live-camera:
-  stream-page-url: 'https://ipcamlive.com/player/player.php?alias=jubileetroodos'
-  snapshot-url-template: '%s/streams/%s/snapshot.jpg'
-  timeouts:
-    connect: 500ms
-    read: 1s
+  alias: 'jubileetroodos'
+  stream-status:
+    update-interval: 1h
+    url: 'https://ipcamlive.com/player/getcamerastreamstate.php'
 
 #Logging params
 logging:
