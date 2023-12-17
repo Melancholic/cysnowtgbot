@@ -1,9 +1,7 @@
 package com.anagorny.cysnowbot.services
 
-import com.anagorny.cysnowbot.models.CameraSnapshotContainer
-import com.anagorny.cysnowbot.models.RoadConditionsContainer
+import com.anagorny.cysnowbot.models.AggregatedDataContainer
 
 interface DataHolder {
-    fun getRoadConditions() : RoadConditionsContainer
-    fun getCameraSnapshot() : CameraSnapshotContainer
+    fun getData(): AggregatedDataContainer
 }

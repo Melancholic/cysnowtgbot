@@ -3,7 +3,7 @@ package com.anagorny.cysnowbot.services.impl
 import com.anagorny.cysnowbot.helpers.runAsync
 import com.anagorny.cysnowbot.models.CameraSnapshotContainer
 import com.anagorny.cysnowbot.models.CameraStatus
-import com.anagorny.cysnowbot.services.CameraSnapshotFetcher
+import com.anagorny.cysnowbot.services.Fetcher
 import com.anagorny.cysnowbot.services.LiveCameraStreamStatusService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -29,10 +29,10 @@ class CameraSnapshotFetcherImpl(
     @Value("\${live-camera.alias}") val cameraAlias: String,
     val cameraStatusService: LiveCameraStreamStatusService,
     restTemplateBuilder: RestTemplateBuilder
-) : CameraSnapshotFetcher {
+) : Fetcher<CameraSnapshotContainer> {
     private val restTemplate = restTemplateBuilder.build()
 
-    override suspend fun fetchCameraSnapshot(): Deferred<CameraSnapshotContainer?> {
+    override suspend fun fetchAsync(): Deferred<CameraSnapshotContainer?> {
         return scope.runAsync {
             val cameraStatus = cameraStatusService.cameraStreamStatus()
             return@runAsync if (cameraStatus.streamIsAvailable) {

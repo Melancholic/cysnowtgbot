@@ -24,10 +24,10 @@ import java.util.concurrent.atomic.AtomicReference
 class LiveCameraStreamStatusServiceImpl(
     @Qualifier("mainFlowCoroutineScope")
     private val scope: CoroutineScope,
-    @Value("\${live-camera.alias}") val cameraAlias: String,
-    @Value("\${live-camera.stream-status.update-interval:1h}") val updateInterval: Duration,
-    @Value("\${live-camera.stream-status.url}") val baseUrl: String,
-    val mapper: ObjectMapper,
+    @Value("\${live-camera.alias}") private val cameraAlias: String,
+    @Value("\${live-camera.stream-status.update-interval:1h}") private val updateInterval: Duration,
+    @Value("\${live-camera.stream-status.url}") private val baseUrl: String,
+    private val mapper: ObjectMapper,
     restTemplateBuilder: RestTemplateBuilder
 ) : LiveCameraStreamStatusService {
     private val url = UriComponentsBuilder.fromHttpUrl(baseUrl)
