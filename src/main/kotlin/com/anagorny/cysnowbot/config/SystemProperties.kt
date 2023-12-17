@@ -8,10 +8,17 @@ data class SystemProperties(
     val workDir: String,
     val rateLimiting: RateLimiterProperties = RateLimiterProperties(),
     val executor: ExecutorProperties = ExecutorProperties(),
-    val retryer: RetryerProperties = RetryerProperties()
+    val retryer: RetryerProperties = RetryerProperties(),
+    val timeouts: TimeoutsProperties = TimeoutsProperties()
 ) {
-    data class ExecutorProperties(val coreSize: Int = 5, val maxSize: Int = 10)
 }
+
+data class TimeoutsProperties(
+    val read: Duration = Duration.ofSeconds(1),
+    val connect: Duration = Duration.ofSeconds(1)
+)
+
+data class ExecutorProperties(val coreSize: Int = 5, val maxSize: Int = 10)
 
 data class RetryerProperties(
     val maxAttempts: Int = 3,

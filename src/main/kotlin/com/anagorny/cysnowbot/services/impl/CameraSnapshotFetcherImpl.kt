@@ -2,21 +2,23 @@ package com.anagorny.cysnowbot.services.impl
 
 import com.anagorny.cysnowbot.helpers.runAsync
 import com.anagorny.cysnowbot.models.CameraSnapshotContainer
+import com.anagorny.cysnowbot.models.CameraStatus
 import com.anagorny.cysnowbot.services.CameraSnapshotFetcher
+import com.anagorny.cysnowbot.services.LiveCameraStreamStatusService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import mu.KLogging
-import org.jsoup.Jsoup
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
+import org.springframework.web.util.UriComponentsBuilder
 import java.io.File
-import java.lang.String.format
 import java.nio.file.Files
-import java.time.Duration
 import java.util.*
 
 
@@ -24,41 +26,47 @@ import java.util.*
 class CameraSnapshotFetcherImpl(
     @Qualifier("mainFlowCoroutineScope")
     private val scope: CoroutineScope,
-    @Value("\${live-camera.stream-page-url}") val liveStreamPageUrl: String,
-    @Value("\${live-camera.snapshot-url-template}") val snapshotUrlTemplate: String,
-    @Value("\${live-camera.timeouts.connect}") val connectTimeout: Duration,
-    @Value("\${live-camera.timeouts.read}") val readTimeout: Duration
+    @Value("\${live-camera.alias}") val cameraAlias: String,
+    val cameraStatusService: LiveCameraStreamStatusService,
+    restTemplateBuilder: RestTemplateBuilder
 ) : CameraSnapshotFetcher {
-    private val restTemplate = RestTemplateBuilder()
-        .setReadTimeout(readTimeout)
-        .setConnectTimeout(connectTimeout)
-        .build()
+    private val restTemplate = restTemplateBuilder.build()
 
     override suspend fun fetchCameraSnapshot(): Deferred<CameraSnapshotContainer?> {
         return scope.runAsync {
-            val imageBytes: ByteArray? = tryDownloadSnapshotImage()
-            if (imageBytes == null) {
-                null
+            val cameraStatus = cameraStatusService.cameraStreamStatus()
+            return@runAsync if (cameraStatus.streamIsAvailable) {
+                val imageBytes: ByteArray? =
+                    downloadImage(buildSnapshotUrl(cameraStatus), cameraAlias)
+                if (imageBytes == null) {
+                    null
+                } else {
+                    val file = withContext(Dispatchers.IO) {
+                        File.createTempFile("camera-snapshot", ".jpg")
+                    }
+                    withContext(Dispatchers.IO) {
+                        Files.write(file.toPath(), imageBytes)
+                    }
+                    logger.info { "Live camera snapshot successfully saved to '${file.absolutePath}" }
+                    CameraSnapshotContainer(file)
+                }
             } else {
-                val file = File.createTempFile("camera-snapshot", ".jpg")
-                Files.write(file.toPath(), imageBytes)
-                logger.info { "Live camera snapshot successfully saved to '${file.absolutePath}" }
-                CameraSnapshotContainer(file)
+                logger.warn { "Live camera stream is not available now" }
+                null
             }
         }
     }
 
-    private fun tryDownloadSnapshotImage(): ByteArray? {
-        //ToDo redefine host and stream id only in case when previous values are outdated
-        val host = retrieveHost(liveStreamPageUrl)
-            ?: throw IllegalStateException("Couldn't fetch a live camera snapshot host")
-        val streamId = retrieveStreamId(liveStreamPageUrl)
-            ?: throw IllegalStateException("Couldn't fetch a live camera stream id")
-        return downloadImage(format(snapshotUrlTemplate, host, streamId))
-    }
+    private fun buildSnapshotUrl(cameraStatus: CameraStatus) = UriComponentsBuilder.fromHttpUrl(cameraStatus.streamUrl)
+        .pathSegment("streams")
+        .pathSegment(cameraStatus.streamId)
+        .pathSegment("snapshot.jpg")
+        .queryParam("alias", cameraAlias)
+        .toUriString()
 
-    private fun downloadImage(url: String): ByteArray? = try {
-        val entity: ResponseEntity<ByteArray> = restTemplate.getForEntity(url, ByteArray::class.java)
+    private fun downloadImage(url: String, alias: String): ByteArray? = try {
+        val queryParams = hashMapOf("alias" to alias)
+        val entity: ResponseEntity<ByteArray> = restTemplate.getForEntity(url, ByteArray::class.java, queryParams)
         if (entity.statusCode == HttpStatus.OK) {
             entity.body
         } else {
@@ -68,20 +76,6 @@ class CameraSnapshotFetcherImpl(
     } catch (e: java.lang.Exception) {
         logger.error("Error downloading file from '$url'", e)
         null
-    }
-
-    protected fun retrieveStreamId(urlToLiveStream: String): String? {
-        val html: String? = Jsoup.connect(urlToLiveStream)?.get()?.html()
-        val streamId = html?.let { "var streamid = '(.+)';".toRegex().find(it)?.groups?.get(1)?.value }
-        logger.info { "Fetched streamId=${streamId} for Trodos live camera snapshot." }
-        return streamId
-    }
-
-    protected fun retrieveHost(urlToLiveStream: String): String? {
-        val html: String? = Jsoup.connect(urlToLiveStream)?.get()?.html()
-        val host = html?.let { "var address = '(.+)';".toRegex().find(it)?.groups?.get(1)?.value }
-        logger.info { "Fetched host=${host} for Trodos live camera snapshot." }
-        return host
     }
 
     companion object : KLogging()
