@@ -1,12 +1,13 @@
 package com.anagorny.cysnowbot.services.impl
 
-import com.anagorny.cysnowbot.helpers.runAsync
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.models.RoadStateContainer
 import com.anagorny.cysnowbot.models.RoadStatus
 import com.anagorny.cysnowbot.services.Fetcher
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
 import mu.KLogging
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
@@ -21,12 +22,12 @@ import java.util.*
 class RoadConditionsFetcherImpl(
     @Qualifier("mainFlowCoroutineScope")
     private val scope: CoroutineScope,
-     @Value("\${road-conditions-external-service.url}") val roadConditionsExternalServiceUrl: String
+    @Value("\${road-conditions-external-service.url}") val roadConditionsExternalServiceUrl: String
 ) : Fetcher<RoadConditionsContainer> {
     private val dateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm")
 
-    override suspend fun fetchAsync(): Deferred<RoadConditionsContainer?> {
-        return scope.runAsync {
+    override fun fetchAsFlow(): Flow<RoadConditionsContainer?> {
+        return flow {
             try {
                 val doc: Document = Jsoup.connect(roadConditionsExternalServiceUrl).get()
                 val result = RoadConditionsContainer(
@@ -34,11 +35,14 @@ class RoadConditionsFetcherImpl(
                     updatedAt = extractUpdatedTime(doc),
                 )
                 logger.info { "Current Road Conditions successfully fetched" }
-                result
+                emit(result)
             } catch (e: Exception) {
                 logger.error("Can't fetch road conditions from external service", e)
-                null
+                emit(null)
             }
+        }.catch { e ->
+            logger.error(e) { "Error while updating state of road conditions" }
+            emit(null)
         }
     }
 

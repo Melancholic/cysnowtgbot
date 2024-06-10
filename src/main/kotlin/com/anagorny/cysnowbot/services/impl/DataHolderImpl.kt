@@ -4,10 +4,13 @@ import com.anagorny.cysnowbot.helpers.removeFile
 import com.anagorny.cysnowbot.models.AggregatedDataContainer
 import com.anagorny.cysnowbot.models.CameraSnapshotContainer
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
+import com.anagorny.cysnowbot.models.WeatherStatus
 import com.anagorny.cysnowbot.services.DataHolder
 import com.anagorny.cysnowbot.services.Fetcher
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.*
 import mu.KLogging
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import java.time.Duration
@@ -21,6 +24,8 @@ import kotlin.concurrent.withLock
 class DataHolderImpl(
     private val cameraSnapshotFetcher: Fetcher<CameraSnapshotContainer>,
     private val roadConditionsFetcher: Fetcher<RoadConditionsContainer>,
+    private val olympusWeatherStatusFetcher: Fetcher<WeatherStatus>,
+    @Qualifier("mainFlowCoroutineScope") private val scope: CoroutineScope
 ) : DataHolder {
     private val schedulerInterval = Duration.ofMinutes(UPDATE_INTERVAL_IN_MINUTES)
     private val aggregatedData = AtomicReference<AggregatedDataContainer?>();
@@ -36,33 +41,22 @@ class DataHolderImpl(
     @Scheduled(fixedDelay = UPDATE_INTERVAL_IN_MINUTES, timeUnit = TimeUnit.MINUTES)
     protected fun updateState() {
         locker.withLock {
-            if (Duration.between(
-                    aggregatedData.get()?.timestamp ?: LocalDateTime.MIN,
-                    LocalDateTime.now()
-                ) >= schedulerInterval
-            ) {
-                logger.info { "Updating state running" }
-                runBlocking {
-                    val roadConditionsResultDef = roadConditionsFetcher.fetchAsync()
-                    val cameraSnapshotResultDef = cameraSnapshotFetcher.fetchAsync()
-
-                    val result = AggregatedDataContainer.builder()
-
-                    try {
-                        result.roadConditions(roadConditionsResultDef.await())
-                    } catch (e: Exception) {
-                        logger.error(e) { "Error while updating state of road conditions" }
-                    }
-
-                    try {
-                        result.cameraSnapshot(cameraSnapshotResultDef.await())
-                    } catch (e: Exception) {
-                        logger.error(e) { "Error while updating state of live camera snapshot" }
-                    }
-
-                    doCleanup(aggregatedData.getAndUpdate { result.build() })
-                }
-                logger.info { "Updating state completed" }
+            if (Duration.between(aggregatedData.get()?.timestamp ?: LocalDateTime.MIN, LocalDateTime.now()) >= schedulerInterval) {
+                logger.info { "Updating state starting" }
+                scope.launch {
+                    flow { emit(AggregatedDataContainer.builder()) }
+                        .zip(roadConditionsFetcher.fetchAsFlow()) {
+                                resBuilder, value -> resBuilder.roadConditions(value)
+                        }.zip(cameraSnapshotFetcher.fetchAsFlow()) {
+                                resBuilder, value -> resBuilder.cameraSnapshot(value)
+                        }.zip(olympusWeatherStatusFetcher.fetchAsFlow()) {
+                            resBuilder, value -> resBuilder.olympusWeatherStatus(value)
+                        }.map { it.build() }.collect { result ->
+                            withContext(Dispatchers.IO) {
+                                doCleanup(aggregatedData.getAndUpdate { result })
+                            }
+                        }
+                }.invokeOnCompletion { logger.info { "Updating state finished" } }
             } else {
                 logger.info { "The state has been updated recently, no update is needed now" }
             }

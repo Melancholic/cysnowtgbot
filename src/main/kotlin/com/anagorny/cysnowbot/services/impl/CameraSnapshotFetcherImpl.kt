@@ -1,13 +1,15 @@
 package com.anagorny.cysnowbot.services.impl
 
-import com.anagorny.cysnowbot.helpers.runAsync
 import com.anagorny.cysnowbot.models.CameraSnapshotContainer
 import com.anagorny.cysnowbot.models.CameraStatus
 import com.anagorny.cysnowbot.services.Fetcher
 import com.anagorny.cysnowbot.services.LiveCameraStreamStatusService
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Qualifier
@@ -24,20 +26,19 @@ import java.util.*
 
 @Service
 class CameraSnapshotFetcherImpl(
-    @Qualifier("mainFlowCoroutineScope")
-    private val scope: CoroutineScope,
+    @Qualifier("mainFlowCoroutineScope") private val scope: CoroutineScope,
     @Value("\${live-camera.alias}") val cameraAlias: String,
     val cameraStatusService: LiveCameraStreamStatusService,
     restTemplateBuilder: RestTemplateBuilder
 ) : Fetcher<CameraSnapshotContainer> {
     private val restTemplate = restTemplateBuilder.build()
 
-    override suspend fun fetchAsync(): Deferred<CameraSnapshotContainer?> {
-        return scope.runAsync {
-            val cameraStatus = cameraStatusService.cameraStreamStatus()
-            return@runAsync if (cameraStatus.streamIsAvailable) {
-                val imageBytes: ByteArray? =
-                    downloadImage(buildSnapshotUrl(cameraStatus), cameraAlias)
+    override fun fetchAsFlow(): Flow<CameraSnapshotContainer?> {
+        return flow {
+            emit(cameraStatusService.cameraStreamStatus())
+        }.map { cameraStatus ->
+            if (cameraStatus.streamIsAvailable) {
+                val imageBytes: ByteArray? = downloadImage(buildSnapshotUrl(cameraStatus))
                 if (imageBytes == null) {
                     null
                 } else {
@@ -54,19 +55,20 @@ class CameraSnapshotFetcherImpl(
                 logger.warn { "Live camera stream is not available now" }
                 null
             }
+        }.catch { e ->
+            logger.error(e) { "Error while updating state of live camera snapshot" }
+            emit(null)
         }
     }
 
-    private fun buildSnapshotUrl(cameraStatus: CameraStatus) = UriComponentsBuilder.fromHttpUrl(cameraStatus.streamUrl)
-        .pathSegment("streams")
-        .pathSegment(cameraStatus.streamId)
-        .pathSegment("snapshot.jpg")
-        .queryParam("alias", cameraAlias)
-        .toUriString()
 
-    private fun downloadImage(url: String, alias: String): ByteArray? = try {
-        val queryParams = hashMapOf("alias" to alias)
-        val entity: ResponseEntity<ByteArray> = restTemplate.getForEntity(url, ByteArray::class.java, queryParams)
+    private fun buildSnapshotUrl(cameraStatus: CameraStatus) =
+        UriComponentsBuilder.fromHttpUrl(cameraStatus.streamUrl).pathSegment("streams")
+            .pathSegment(cameraStatus.streamId).pathSegment("snapshot.jpg").queryParam("alias", cameraAlias)
+            .toUriString()
+
+    private fun downloadImage(url: String): ByteArray? = try {
+        val entity: ResponseEntity<ByteArray> = restTemplate.getForEntity(url, ByteArray::class.java)
         if (entity.statusCode == HttpStatus.OK) {
             entity.body
         } else {

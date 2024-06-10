@@ -1,7 +1,7 @@
 package com.anagorny.cysnowbot.services
 
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.flow.Flow
 
 interface Fetcher<T> {
-    suspend fun fetchAsync(): Deferred<T?>
+    fun fetchAsFlow(): Flow<T?>
 }

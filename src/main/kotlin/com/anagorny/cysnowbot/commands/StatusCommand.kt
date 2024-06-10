@@ -2,8 +2,6 @@ package com.anagorny.cysnowbot.commands
 
 import com.anagorny.cysnowbot.helpers.withErrorLogging
 import com.anagorny.cysnowbot.models.AggregatedDataContainer
-import com.anagorny.cysnowbot.models.CameraSnapshotContainer
-import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.services.DataHolder
 import com.anagorny.cysnowbot.services.RateLimiter
 import mu.KLogging
@@ -70,31 +68,46 @@ class StatusCommand(
             if (data.cameraSnapshot.image == null || !data.cameraSnapshot.image.exists()) {
                 sender.execute(SendMessage().apply {
                     chatId = chat.id.toString()
-                    text = makeCaption(data.roadConditions)
+                    text = makeCaption(data)
                     parseMode = "HTML"
                 })
             } else {
                 sender.execute(SendPhoto().apply {
                     data.cameraSnapshot.image.let { photo = InputFile(it) }
                     chatId = chat.id.toString()
-                    caption = makeCaption(data.roadConditions)
+                    caption = makeCaption(data)
                     parseMode = "HTML"
                 })
             }
         }
     }
 
-    fun makeCaption(roadConditions: RoadConditionsContainer?): String = buildString {
-        val titleSuffix =
-            roadConditions?.updatedAt?.let { " <i>(of ${it.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))})</i>" }
+    fun makeCaption(dataContainer: AggregatedDataContainer): String = buildString {
+        val roadConditions = dataContainer.roadConditions
+        val rcTitleSuffix =
+            roadConditions.updatedAt?.let { " <i>(of ${it.format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT))})</i>" }
                 ?: ""
-        append("<b>Cyprus Road Conditions${titleSuffix}</b>")
         append("\n\n")
-        roadConditions?.roads?.forEach {
+        append("<b>Cyprus Road Conditions${rcTitleSuffix}</b>")
+        append("\n\n")
+        roadConditions.roads.forEach {
             append("${it.roadStatus?.icon ?: ""} <b>${it.src} - ${it.dst}</b> <i>(${it.roadStatus?.message})</i>").append(
                 "\n"
             )
         }
+        if (dataContainer.olympusWeatherStatus != null) {
+            append("\n\n")
+            val olympusWeather = dataContainer.olympusWeatherStatus
+            append("<b>Weather - Top of Olympus</b>")
+            append("\n\n")
+            append("Temperature: ").append(olympusWeather.temperature).append(" ").append(olympusWeather.temperatureUnit).append("\n")
+            append("Humidity: ").append(olympusWeather.humidity).append(" ").append(olympusWeather.humidityUnit).append("\n")
+            append("Snow depth: ").append(olympusWeather.snowDepth).append(" ").append(olympusWeather.snowDepthUnit).append("\n")
+            append("Rain: ").append(olympusWeather.rain).append("\n")
+            append("Cloud cover: ").append(olympusWeather.cloudCover).append("\n")
+            append("Wind speed: ").append(olympusWeather.windSpeed).append("\n")
+        }
+
     }
 
     companion object : KLogging() {

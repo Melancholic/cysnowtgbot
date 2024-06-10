@@ -2,8 +2,9 @@ package com.anagorny.cysnowbot.handlers
 
 import com.anagorny.cysnowbot.helpers.withErrorLogging
 import com.anagorny.cysnowbot.services.MainTelegramBotService
+import kotlinx.coroutines.slf4j.MDCContext
+import kotlinx.coroutines.withContext
 import mu.KLogging
-import org.apache.commons.lang3.StringUtils.abbreviate
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.objects.Update
@@ -12,7 +13,7 @@ import org.telegram.telegrambots.meta.api.objects.Update
 class OtherMessageHandler(
     private val botService: MainTelegramBotService
 ) : UpdatesHandler {
-    override suspend fun handle(update: Update) {
+    override suspend fun handle(update: Update) = withContext(MDCContext()) {
         val message = update.message
         if (message.chat.isUserChat) {
             logger.info("Unknown message id=${message.messageId}, text: '${message.text}'")

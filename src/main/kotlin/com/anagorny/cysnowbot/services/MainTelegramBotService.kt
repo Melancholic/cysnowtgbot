@@ -5,6 +5,7 @@ import com.anagorny.cysnowbot.handlers.MainHandler
 import com.anagorny.cysnowbot.helpers.launchAsync
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import mu.KLogging
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Autowired
@@ -47,9 +48,13 @@ class MainTelegramBotService(
 
     override fun processNonCommandUpdate(update: Update) {
         scope.launchAsync {
-            MDC.put("correlationId", "${update.message.chatId}-${update.message.messageId}")
-            mainHandler.handle(update)
-        }.invokeOnCompletion { MDC.clear() }
+            val job = launch {
+                MDC.put("correlationId", "${update.message.chatId}-${update.message.messageId}")
+                mainHandler.handle(update)
+            }
+            job.invokeOnCompletion { MDC.clear() }
+            job.join()
+        }
     }
 
     companion object : KLogging()
