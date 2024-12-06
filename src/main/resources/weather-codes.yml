@@ -1,0 +1,114 @@
+weather:
+  codes:
+    - clearSky:
+      code: 0
+      text: "Clear sky"
+      emoji: "☀️"
+    - mainlyClear:
+      code: 1
+      text: "Mainly clear"
+      emoji: "🌤️"
+    - partlyCloudy:
+      code: 2
+      text: "Partly cloudy"
+      emoji: "⛅"
+    - overcast:
+      code: 3
+      text: "Overcast"
+      emoji: "☁️"
+    - fog:
+      code: 45
+      text: "Fog"
+      emoji: "🌫️"
+    - depositingRimeFog:
+      code: 48
+      text: "Depositing rime fog"
+      emoji: "🌫️🌫️🌫️"
+    - lightDrizzle:
+      code: 51
+      text: "Light drizzle"
+      emoji: "⛆"
+    - moderateDrizzle:
+      code: 53
+      text: "Moderate drizzle"
+      emoji: "⛆⛆"
+    - denseDrizzle:
+      code: 55
+      text: "Dense drizzle"
+      emoji: "⛆⛆⛆"
+    - lightFreezingDrizzle:
+      code: 56
+      text: "Light freezing drizzle"
+      emoji: "⛆❄️"
+    - moderateOrDenseFreezingDrizzle:
+      code: 57
+      text: "Moderate or dense freezing drizzle"
+      emoji: "⛆⛆❄️"
+    - lightRain:
+      code: 61
+      text: "Light rain"
+      emoji: "🌧️"
+    - moderateRain:
+      code: 63
+      text: "Moderate rain"
+      emoji: "🌧️🌧️"
+    - heavyRain:
+      code: 65
+      text: "Heavy rain"
+      emoji: "🌧️🌧️️🌧️"
+    - lightFreezingRain:
+      code: 66
+      text: "Light freezing rain"
+      emoji: "🌧️🌨️"
+    - moderateOrHeavyFreezingRain:
+      code: 67
+      text: "Moderate or heavy freezing rain"
+      emoji: "🌧️🌨️"
+    - slightSnowfall:
+      code: 71
+      text: "Slight snowfall"
+      emoji: "🌨️"
+    - moderateSnowfall:
+      code: 73
+      text: "Moderate snowfall"
+      emoji: "🌨️🌨️"
+    - heavySnowfall:
+      code: 75
+      text: "Heavy snowfall"
+      emoji: "🌨️🌨️🌨️"
+    - snowGrains:
+      code: 77
+      text: "Snow grains"
+      emoji: "❄️"
+    - slightRainShowers:
+      code: 80
+      text: "Slight rain showers"
+      emoji: "☔"
+    - moderateRainShowers:
+      code: 81
+      text: "Moderate rain showers"
+      emoji: "☔☔"
+    - heavyRainShowers:
+      code: 82
+      text: "Heavy rain showers"
+      emoji: "☔☔☔"
+    - slightSnowShowers:
+      code: 85
+      text: "Slight snow showers"
+      emoji: "🌨️"
+    - heavySnowShowers:
+      code: 86
+      text: "Heavy snow showers"
+      emoji: "🌨️🌨️🌨️"
+    - thunderstormSlightOrModerate:
+      code: 95
+      text: "Thunderstorm slight or moderate"
+      emoji: "🌩️"
+    - thunderstormStrong:
+      code: 96
+      text: "Thunderstorm strong"
+      emoji: "🌩️🌩️"
+    - thunderstormHeavy:
+      code: 99
+      text: "Thunderstorm heavy"
+      emoji: "🌩️🌩️🌩️"

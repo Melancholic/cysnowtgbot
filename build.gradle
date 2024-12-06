@@ -3,7 +3,7 @@ buildscript {
     ext {
         kotlin_version = "1.9.21"
         corutines_version = "1.7.3"
-        spring_boot_version = "3.2.0"
+        spring_boot_version = "3.3.0"
         spring_cloud_version = "2023.0.0"
         telegrambots_version = "6.8.0"
     }
@@ -36,6 +36,7 @@ dependencyManagement {
 dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$corutines_version"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j:$corutines_version"
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$corutines_version"
     implementation 'io.github.microutils:kotlin-logging-jvm:3.0.5'
     implementation "org.springframework.boot:spring-boot-starter-web"
     implementation "org.springframework.boot:spring-boot-configuration-processor"

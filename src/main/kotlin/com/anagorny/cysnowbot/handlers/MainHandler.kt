@@ -1,5 +1,6 @@
 package com.anagorny.cysnowbot.handlers
 
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
 import mu.KLogging
@@ -15,7 +16,9 @@ class MainHandler(
         if (update.hasMessage()) {
             val message = update.message
             logger.info { "Got message with id=${message.messageId} in chat ${message.chat.id} from ${message.from.userName}(${message.from.id})" }
-            otherMessageHandler.handle(update)
+            launch {
+                otherMessageHandler.handle(update)
+            }
         }
     }
 

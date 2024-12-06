@@ -46,7 +46,13 @@ live-camera:
   alias: 'jubileetroodos'
   stream-status:
     update-interval: 1h
-    url: 'https://ipcamlive.com/player/getcamerastreamstate.php'
+    url: 'https://www.meteology.gr/cam/troodos'
+weather-provider:
+  url: https://api.open-meteo.com/v1/forecast
+  params:
+    latitude: 34.93633979222953
+    longitude: 32.864586572609916
+    current: [temperature_2m,relative_humidity_2m,rain,showers,snowfall,snow_depth,weather_code,cloud_cover,wind_speed_10m,wind_gusts_10m]
 
 #Logging params
 logging:
@@ -59,3 +65,8 @@ logging:
       max-history: 5
       max-file-size: 10MB
 
+---
+
+spring:
+  config:
+    import: weather-codes.yml
