@@ -100,15 +100,31 @@ class StatusCommand(
             val olympusWeather = dataContainer.olympusWeatherStatus
             append("<b>Weather - Top of Olympus</b>")
             append("\n\n")
-            append("Temperature: ").append(olympusWeather.temperature).append(" ").append(olympusWeather.temperatureUnit).append("\n")
-            append("Humidity: ").append(olympusWeather.humidity).append(" ").append(olympusWeather.humidityUnit).append("\n")
-            append("Snow depth: ").append(olympusWeather.snowDepth).append(" ").append(olympusWeather.snowDepthUnit).append("\n")
-            append("Rain: ").append(olympusWeather.rain).append("\n")
-            append("Cloud cover: ").append(olympusWeather.cloudCover).append("\n")
-            append("Wind speed: ").append(olympusWeather.windSpeed).append("\n")
+
+            append("Common status: ").append(olympusWeather.emoji).append(" ").append("\n")
+            append("Temperature: ").append(olympusWeather.temperature).append(makeUnit(olympusWeather.temperatureUnit))
+                .append("\n")
+            append("Humidity: ").append(olympusWeather.humidity).append(makeUnit(olympusWeather.humidityUnit))
+                .append("\n")
+            if (olympusWeather.snowDepth > 0) append("Snow depth: ").append(olympusWeather.snowDepth)
+                .append(makeUnit(olympusWeather.snowDepthUnit)).append("\n")
+            if (olympusWeather.rain > 0) append("Rain: ").append(olympusWeather.rain)
+                .append(makeUnit(olympusWeather.rainUnit)).append("\n")
+            if (olympusWeather.cloudCover > 0) append("Cloud cover: ").append(olympusWeather.cloudCover)
+                .append(makeUnit(olympusWeather.cloudCoverUnit)).append("\n")
+            if (olympusWeather.windSpeed > 0) append("Wind speed: ").append(olympusWeather.windSpeed)
+                .append(makeUnit(olympusWeather.windSpeedUnit)).append("\n")
         }
 
     }
+
+    private fun makeUnit(unit: String?): String = unit?.let {
+        return@let if ("%" == it) {
+            it
+        } else {
+            " $it"
+        }
+    } ?: ""
 
     companion object : KLogging() {
         enum class ResponseErrorsType(val errorMsg: String? = null) {
