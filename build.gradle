@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 buildscript {
     ext {
-        kotlin_version = "1.9.21"
+        kotlin_version = "1.9.22"
         corutines_version = "1.7.3"
         spring_boot_version = "3.3.0"
         spring_cloud_version = "2023.0.0"
