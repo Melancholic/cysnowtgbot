@@ -1,20 +1,27 @@
-FROM bellsoft/liberica-openjdk-alpine:17
-VOLUME /tmp
+FROM bellsoft/liberica-openjre-alpine:17
+
 ARG JAR_FILE
 ARG ENTRY_POINT
-EXPOSE 3000/tcp
-ENV LANG en_US.utf8
-RUN echo "https://dl-cdn.alpinelinux.org/alpine/v3.12/main" >  /etc/apk/repositories \
-    && echo "https://dl-cdn.alpinelinux.org/alpine/v3.12/community" >> /etc/apk/repositories
+ARG WORK_DIR=/var/cy-snow-telegram-bot
 
-RUN apk update \
-    && apk upgrade --available && sync \
-    && apk add ca-certificates libva-intel-driver \
-    && apk add --no-cache tzdata \
-    && apk add wget \
-    && rm -rf /var/cache/
+# tzdata: musl ships no zoneinfo db, so TZ (Europe/Moscow) is a no-op without it
+# ca-certificates: HTTPS to cyprusski.com, open-meteo and the Telegram API
+RUN apk add --no-cache tzdata ca-certificates
 
-COPY ${JAR_FILE} cy-snow-telegram-bot.jar
-COPY ${ENTRY_POINT} entry_point.sh
+ENV LANG=en_US.utf8
+
+RUN addgroup -S -g 1000 app \
+    && adduser -S -u 1000 -G app -h /app app
+
+# Pre-created so the bot can write logs/snapshots even when the host dir isn't
+# bind-mounted; with a mount, host ownership wins and must match uid 1000.
+RUN mkdir -p "$WORK_DIR/logs" && chown -R app:app "$WORK_DIR"
+
+WORKDIR /app
+COPY --chown=app:app ${JAR_FILE} cy-snow-telegram-bot.jar
+COPY --chown=app:app ${ENTRY_POINT} entry_point.sh
+
+USER app
+EXPOSE 8080/tcp
 
 ENTRYPOINT ["sh", "./entry_point.sh"]
