@@ -48,6 +48,10 @@ jobs:
           git checkout -B main
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # nebula.release pushes the tag via JGit, which ignores the http.extraheader
+          # credential checkout@v7 sets up for native git - embed the token in the remote
+          # URL instead, since JGit does pick up HTTP basic auth from URL user-info.
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
           ./gradlew final --no-daemon # final depends on build (test, bootJar, distrib, ...)
           rm -rf build
 
