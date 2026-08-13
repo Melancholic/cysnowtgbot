@@ -1,4 +1,4 @@
-FROM bellsoft/liberica-openjdk-alpine:17
+FROM bellsoft/liberica-openjdk-alpine:26
 VOLUME /tmp
 ARG JAR_FILE
 ARG ENTRY_POINT
