@@ -7,8 +7,13 @@ import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.models.WeatherStatus
 import com.anagorny.cysnowbot.services.DataHolder
 import com.anagorny.cysnowbot.services.Fetcher
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.zip
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mu.KLogging
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.scheduling.annotation.Scheduled
@@ -44,7 +49,8 @@ class DataHolderImpl(
             if (Duration.between(aggregatedData.get()?.timestamp ?: LocalDateTime.MIN, LocalDateTime.now()) >= schedulerInterval) {
                 logger.info { "Updating state starting" }
                 scope.launch {
-                    flow { emit(AggregatedDataContainer.builder()) }
+                    val previous = aggregatedData.get()
+                    flow { emit(AggregatedDataContainer.builder(previous)) }
                         .zip(roadConditionsFetcher.fetchAsFlow()) {
                                 resBuilder, value -> resBuilder.roadConditions(value)
                         }.zip(cameraSnapshotFetcher.fetchAsFlow()) {
@@ -53,7 +59,7 @@ class DataHolderImpl(
                             resBuilder, value -> resBuilder.olympusWeatherStatus(value)
                         }.map { it.build() }.collect { result ->
                             withContext(Dispatchers.IO) {
-                                doCleanup(aggregatedData.getAndUpdate { result })
+                                doCleanup(aggregatedData.getAndUpdate { result }, result)
                             }
                         }
                 }.invokeOnCompletion { logger.info { "Updating state finished" } }
@@ -63,9 +69,11 @@ class DataHolderImpl(
         }
     }
 
-    private fun doCleanup(old: AggregatedDataContainer?) {
-        old?.cameraSnapshot?.let {
-            removeFile(it.image, logger)
+    private fun doCleanup(old: AggregatedDataContainer?, new: AggregatedDataContainer) {
+        val oldImage = old?.cameraSnapshot?.image
+        // `new` may carry the same image forward if the camera fetch failed this cycle.
+        if (oldImage != null && oldImage != new.cameraSnapshot.image) {
+            removeFile(oldImage, logger)
         }
     }
 

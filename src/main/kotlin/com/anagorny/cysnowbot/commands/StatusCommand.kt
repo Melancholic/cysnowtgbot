@@ -30,7 +30,10 @@ class StatusCommand(
         sentAction(sender, chat, ActionType.TYPING)
         val data = dataHolder.getData()
 
-        if (data.roadConditions.roads.isEmpty()) {
+        // Only error out when there's truly nothing to show - don't drop a working photo/weather
+        // just because road conditions failed to parse.
+        val hasImage = data.cameraSnapshot.image?.exists() == true
+        if (data.roadConditions.roads.isEmpty() && !hasImage && data.olympusWeatherStatus == null) {
             doError(ResponseErrorsType.NOT_PRESENT_ERR, sender, user, chat)
         } else {
             doResponse(sender, user, chat, data)
@@ -90,10 +93,14 @@ class StatusCommand(
         append("\n\n")
         append("<b>Cyprus Road Conditions${rcTitleSuffix}</b>")
         append("\n\n")
-        roadConditions.roads.forEach {
-            append("${it.roadStatus?.icon ?: ""} <b>${it.src} - ${it.dst}</b> <i>(${it.roadStatus?.message})</i>").append(
-                "\n"
-            )
+        if (roadConditions.roads.isEmpty()) {
+            append("<i>Road conditions are temporarily unavailable.</i>").append("\n")
+        } else {
+            roadConditions.roads.forEach {
+                append("${it.roadStatus?.icon ?: ""} <b>${it.src} - ${it.dst}</b> <i>(${it.roadStatus?.message})</i>").append(
+                    "\n"
+                )
+            }
         }
         if (dataContainer.olympusWeatherStatus != null) {
             append("\n\n")

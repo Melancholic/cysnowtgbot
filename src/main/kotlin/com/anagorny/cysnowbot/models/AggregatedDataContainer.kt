@@ -9,8 +9,13 @@ data class AggregatedDataContainer(
     val timestamp: LocalDateTime = LocalDateTime.now()
 ) {
     companion object {
-        fun builder(): AggregatedDataContainerBuilder {
-            return AggregatedDataContainerBuilder()
+        // Seeded from `previous` so a fetcher emitting null keeps its last-known-good value.
+        fun builder(previous: AggregatedDataContainer? = null): AggregatedDataContainerBuilder {
+            return AggregatedDataContainerBuilder(
+                roadConditions = previous?.roadConditions ?: RoadConditionsContainer(),
+                cameraSnapshot = previous?.cameraSnapshot ?: CameraSnapshotContainer(),
+                olympusWeatherStatus = previous?.olympusWeatherStatus
+            )
         }
     }
 
