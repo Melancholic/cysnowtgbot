@@ -2,10 +2,10 @@ name: Docker Build & Publish
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     tags: ['v*.*.*']
   pull_request:
-    branches: [master]
+    branches: [main]
   workflow_dispatch:
 
 env:
@@ -36,14 +36,14 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      # Auto-release: every merge to master is tagged & published, same as ./build-release.sh
+      # Auto-release: every merge to main is tagged & published, same as ./build-release.sh
       # locally. Re-attach the branch (checkout leaves it detached) since nebula needs one.
       # `final` pulls in the whole build/assemble graph, stamping a jar with a pre-release
       # dev version before it tags - wipe it so "Build boot jar" below starts clean.
       - name: Tag release
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          git checkout -B master
+          git checkout -B main
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           ./gradlew final --no-daemon # final depends on build (test, bootJar, distrib, ...)
@@ -58,6 +58,12 @@ jobs:
             tag=$(git describe --tags --exact-match 2>/dev/null || true)
             echo "RELEASE_VERSION=${tag#v}" >> "$GITHUB_ENV"
           fi
+
+      # Non-push runs (PR, manual dispatch) skip "Tag release" above, so run the tests here -
+      # bootJar alone doesn't depend on the test task.
+      - name: Run tests
+        if: github.event_name != 'push'
+        run: ./gradlew test --no-daemon
 
       - name: Build boot jar
         run: ./gradlew bootJar --no-daemon
