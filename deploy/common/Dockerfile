@@ -22,6 +22,5 @@ COPY --chown=app:app ${JAR_FILE} cy-snow-telegram-bot.jar
 COPY --chown=app:app ${ENTRY_POINT} entry_point.sh
 
 USER app
-EXPOSE 8080/tcp
 
 ENTRYPOINT ["sh", "./entry_point.sh"]
