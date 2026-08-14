@@ -6,8 +6,8 @@ import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 
 // Guards against Spring wiring regressions (missing beans, bad config properties,
-// Jackson/RestTemplateBuilder breakage) across the Boot/telegrambots version bumps.
-// `localhost` profile disables rate limiting; token/chat properties are dummy values,
+// Jackson/RestTemplateBuilder/telegrambots breakage) across the Boot/telegrambots version
+// bumps. `localhost` profile disables rate limiting; token/chat properties are dummy values,
 // nothing in this test talks to the network (see NoOpTelegramBotInitializerConfig).
 @SpringBootTest(
     properties = [

@@ -1,10 +1,10 @@
 package com.anagorny.cysnowbot.commands
 
 import com.anagorny.cysnowbot.services.RateLimiter
-import org.telegram.telegrambots.meta.api.objects.Chat
-import org.telegram.telegrambots.meta.api.objects.Message
 import org.telegram.telegrambots.meta.api.objects.User
-import org.telegram.telegrambots.meta.bots.AbsSender
+import org.telegram.telegrambots.meta.api.objects.chat.Chat
+import org.telegram.telegrambots.meta.api.objects.message.Message
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import kotlin.math.max
 
 abstract class RateLimitedCommand(
@@ -13,7 +13,7 @@ abstract class RateLimitedCommand(
     private val rateLimiter: RateLimiter
 ) : Command(commandIdentifier, description) {
 
-    override fun processMessage(sender: AbsSender, message: Message, arguments: Array<out String>) {
+    override fun processMessage(sender: TelegramClient, message: Message, arguments: Array<out String>) {
         if (rlChecking(message.chat, message.from)) {
             super.processMessage(sender, message, arguments)
         } else {
@@ -28,7 +28,7 @@ abstract class RateLimitedCommand(
         }
     }
 
-    override fun execute(sender: AbsSender, user: User, chat: Chat, arguments: Array<out String>) {
+    override fun execute(sender: TelegramClient, user: User, chat: Chat, arguments: Array<out String>) {
         doExecute(sender, user, chat, arguments)
     }
 

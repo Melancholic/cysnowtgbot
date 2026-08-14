@@ -10,18 +10,20 @@ import tools.jackson.databind.json.JsonMapper
 import tools.jackson.module.kotlin.KotlinModule
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.core.task.AsyncTaskExecutor
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
-import org.telegram.telegrambots.starter.TelegramBotStarterConfiguration
+import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
+import org.telegram.telegrambots.meta.generics.TelegramClient
 
 
 @Configuration
-//ToDo remove it after migration telegrambots-spring-boot-starter to spring boot 3.0
-@Import(value = [TelegramBotStarterConfiguration::class])
 class SpringConfiguration(
     val properties: SystemProperties
 ) {
+    @Bean
+    fun telegramClient(telegramProperties: TelegramProperties): TelegramClient =
+        OkHttpTelegramClient(telegramProperties.bot.token)
+
     @Bean
     fun threadPoolTaskExecutor(): AsyncTaskExecutor {
         val threadPoolTaskExecutor = ThreadPoolTaskExecutor()

@@ -4,23 +4,24 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.objects.Chat
 import org.telegram.telegrambots.meta.api.objects.User
-import org.telegram.telegrambots.meta.bots.AbsSender
+import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
+import org.telegram.telegrambots.meta.generics.TelegramClient
 
 @Component
 class StartCommand : BotCommand("start", "Welcome command") {
 
-    override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<out String>) {
+    override fun execute(absSender: TelegramClient, user: User, chat: Chat, arguments: Array<out String>) {
         val messageBuilder = StringBuilder()
         messageBuilder.append("Welcome ${user.firstName}!\n")
         messageBuilder.append("this bot will notify you about Cyprus mountain roads status.\n")
         messageBuilder.append("To learn how to use it, try /help")
 
-        val answer = SendMessage()
-        answer.chatId = chat.id.toString()
-        answer.text = messageBuilder.toString()
+        val answer = SendMessage.builder()
+            .chatId(chat.id.toString())
+            .text(messageBuilder.toString())
+            .build()
         try {
             absSender.execute(answer)
         } catch (e: TelegramApiException) {

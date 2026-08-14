@@ -6,24 +6,25 @@ import org.springframework.stereotype.Component
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.ICommandRegistry
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
-import org.telegram.telegrambots.meta.api.objects.Chat
 import org.telegram.telegrambots.meta.api.objects.User
-import org.telegram.telegrambots.meta.bots.AbsSender
+import org.telegram.telegrambots.meta.api.objects.chat.Chat
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException
+import org.telegram.telegrambots.meta.generics.TelegramClient
 
 @Component
 class HelpCommand(private val context: ApplicationContext) :
     BotCommand("help", "Get all the commands this bot provides") {
 
-    override fun execute(absSender: AbsSender, user: User, chat: Chat, arguments: Array<String>) {
+    override fun execute(absSender: TelegramClient, user: User, chat: Chat, arguments: Array<String>) {
         val helpMessageBuilder = StringBuilder("Registered commands for this bot:\n\n")
         for (botCommand in commandRegistry().registeredCommands) {
             helpMessageBuilder.append(botCommand.toString()).append("\n\n")
         }
-        val helpMessage = SendMessage()
-        helpMessage.chatId = chat.id.toString()
-        helpMessage.enableHtml(true)
-        helpMessage.text = helpMessageBuilder.toString()
+        val helpMessage = SendMessage.builder()
+            .chatId(chat.id.toString())
+            .parseMode("HTML")
+            .text(helpMessageBuilder.toString())
+            .build()
         try {
             absSender.execute(helpMessage)
         } catch (e: TelegramApiException) {
