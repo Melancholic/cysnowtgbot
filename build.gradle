@@ -4,7 +4,7 @@ buildscript {
     ext {
         kotlin_version = "2.4.10"
         corutines_version = "1.11.0"
-        spring_boot_version = "3.5.16"
+        spring_boot_version = "4.1.0"
         telegrambots_version = "6.8.0"
     }
     repositories {
@@ -28,8 +28,9 @@ java {
     }
 }
 
-ext {
-}
+// Boot 4.1's BOM pins kotlin.version to 2.3.21; override so the 2.4.10 stdlib we
+// compile against doesn't end up paired with an older Kotlin runtime.
+ext['kotlin.version'] = kotlin_version
 
 dependencies {
     implementation platform("org.springframework.boot:spring-boot-dependencies:$spring_boot_version")
@@ -39,11 +40,12 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-reactor:$corutines_version"
     implementation 'io.github.oshai:kotlin-logging-jvm:8.0.4'
     implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-restclient"
     implementation "org.springframework.boot:spring-boot-configuration-processor"
     implementation 'org.springframework.boot:spring-boot-starter-cache'
     implementation "com.github.ben-manes.caffeine:caffeine:3.2.4"
     implementation "org.springframework:spring-context-support"
-    implementation "com.fasterxml.jackson.module:jackson-module-kotlin"
+    implementation "tools.jackson.module:jackson-module-kotlin"
     implementation "org.telegram:telegrambots-spring-boot-starter:$telegrambots_version"
     implementation "org.telegram:telegrambotsextensions:$telegrambots_version"
     implementation 'org.apache.commons:commons-lang3:3.20.0'

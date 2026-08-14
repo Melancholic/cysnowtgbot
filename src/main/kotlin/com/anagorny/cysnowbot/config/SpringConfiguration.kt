@@ -1,12 +1,13 @@
 package com.anagorny.cysnowbot.config
 
 import com.anagorny.cysnowbot.helpers.coroutineScope
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.slf4j.MDCContext
-import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.boot.restclient.RestTemplateBuilder
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -36,16 +37,14 @@ class SpringConfiguration(
     ) + MDCContext()
 
     @Bean
-    fun jsonMapper(): ObjectMapper = ObjectMapper()
-        .registerModule(
-            KotlinModule.Builder()
-                .build()
-        )
+    fun jsonMapper(): ObjectMapper = JsonMapper.builder()
+        .addModule(KotlinModule.Builder().build())
+        .build()
 
     @Bean
     fun  restTemplateBuilder(systemProperties: SystemProperties) : RestTemplateBuilder {
         return RestTemplateBuilder()
-            .setConnectTimeout(properties.timeouts.connect)
-            .setReadTimeout(properties.timeouts.read)
+            .connectTimeout(properties.timeouts.connect)
+            .readTimeout(properties.timeouts.read)
     }
 }

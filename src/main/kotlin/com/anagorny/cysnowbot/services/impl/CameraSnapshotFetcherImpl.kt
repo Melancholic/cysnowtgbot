@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.boot.restclient.RestTemplateBuilder
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.stereotype.Service
@@ -25,7 +25,7 @@ class CameraSnapshotFetcherImpl(
     restTemplateBuilder: RestTemplateBuilder
 ) : Fetcher<CameraSnapshotContainer> {
     private val restTemplate = restTemplateBuilder.build()
-    private val url = UriComponentsBuilder.fromHttpUrl(baseUrl)
+    private val url = UriComponentsBuilder.fromUriString(baseUrl)
         .toUriString()
 
     override fun fetchAsFlow(): Flow<CameraSnapshotContainer?> {
