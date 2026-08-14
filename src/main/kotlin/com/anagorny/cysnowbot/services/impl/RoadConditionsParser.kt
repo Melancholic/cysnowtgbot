@@ -10,9 +10,6 @@ import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.format.DateTimeFormatter
 
-// Selects by paragraph type instead of a positional XPath: the site renders the road-conditions
-// paragraph twice (main content + footer block) and leaves one copy empty, so we also pick
-// whichever match is non-empty.
 object RoadConditionsParser {
     private val logger = KotlinLogging.logger {}
     private val legacyTimeFormat = DateTimeFormatter.ofPattern("dd/MM/yyyy - HH:mm")
