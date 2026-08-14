@@ -1,6 +1,6 @@
 package com.anagorny.cysnowbot.commands
 
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.context.ApplicationContext
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand
@@ -27,11 +27,13 @@ class HelpCommand(private val context: ApplicationContext) :
         try {
             absSender.execute(helpMessage)
         } catch (e: TelegramApiException) {
-            logger.error("Error while processing command from user='{}': ", user.userName, e)
+            logger.error(e) { "Error while processing command from user='${user.userName}': " }
         }
     }
 
     private fun commandRegistry(): ICommandRegistry = context.getBean(ICommandRegistry::class.java)
 
-    companion object : KLogging()
+    companion object {
+        val logger = KotlinLogging.logger {}
+    }
 }

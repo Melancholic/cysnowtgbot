@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.zip
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
@@ -77,7 +77,8 @@ class DataHolderImpl(
         }
     }
 
-    companion object : KLogging() {
+    companion object {
+        val logger = KotlinLogging.logger {}
         private const val UPDATE_INTERVAL_IN_MINUTES: Long = 3
     }
 }

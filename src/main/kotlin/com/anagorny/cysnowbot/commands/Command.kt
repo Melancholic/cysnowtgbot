@@ -18,7 +18,7 @@ abstract class Command(
 
     protected fun doReply(sender: AbsSender, message: Message, response: String): Message? {
         return withErrorLogging(
-            StatusCommand.logger::error,
+            { msg, e -> StatusCommand.logger.error(e) { msg } },
             "Error while replying to message=${message.messageId} from user='${message.from.userName}' in the chat='{${message.chat.title}}'"
         ) {
             sender.execute(SendMessage().apply {

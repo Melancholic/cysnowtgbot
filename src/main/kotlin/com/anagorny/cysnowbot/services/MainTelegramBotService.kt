@@ -6,7 +6,7 @@ import com.anagorny.cysnowbot.helpers.launchAsync
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -41,7 +41,7 @@ class MainTelegramBotService(
 
     @PostConstruct
     protected fun postConstruct() {
-        logger.info("${this.javaClass.canonicalName} was initialized")
+        logger.info { "${this.javaClass.canonicalName} was initialized" }
     }
 
     override fun getBotUsername() = telegramProperties.bot.name
@@ -57,5 +57,7 @@ class MainTelegramBotService(
         }
     }
 
-    companion object : KLogging()
+    companion object {
+        val logger = KotlinLogging.logger {}
+    }
 }

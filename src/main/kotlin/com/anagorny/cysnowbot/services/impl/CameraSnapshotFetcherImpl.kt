@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.http.HttpStatus
@@ -54,13 +54,15 @@ class CameraSnapshotFetcherImpl(
         if (entity.statusCode == HttpStatus.OK) {
             entity.body
         } else {
-            logger.error("Error downloading file from '$url', response status: ${entity.statusCode}")
+            logger.error { "Error downloading file from '$url', response status: ${entity.statusCode}" }
             null
         }
     } catch (e: java.lang.Exception) {
-        logger.error("Error downloading file from '$url'", e)
+        logger.error(e) { "Error downloading file from '$url'" }
         null
     }
 
-    companion object : KLogging()
+    companion object {
+        val logger = KotlinLogging.logger {}
+    }
 }

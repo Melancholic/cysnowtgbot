@@ -6,7 +6,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jsoup.Jsoup
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -39,7 +39,8 @@ class RoadConditionsFetcherImpl(
         }
     }
 
-    companion object : KLogging() {
+    companion object {
+        val logger = KotlinLogging.logger {}
         private const val TIMEOUT_MILLIS = 15_000
         private const val USER_AGENT =
             "Mozilla/5.0 (compatible;)"

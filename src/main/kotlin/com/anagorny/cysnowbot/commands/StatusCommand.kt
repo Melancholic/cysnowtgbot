@@ -4,7 +4,7 @@ import com.anagorny.cysnowbot.helpers.withErrorLogging
 import com.anagorny.cysnowbot.models.AggregatedDataContainer
 import com.anagorny.cysnowbot.services.DataHolder
 import com.anagorny.cysnowbot.services.RateLimiter
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.methods.ActionType
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
@@ -47,7 +47,7 @@ class StatusCommand(
         chat: Chat
     ) {
         withErrorLogging(
-            logger::error,
+            { msg, e -> logger.error(e) { msg } },
             "Error while processing command from user='${user.userName}' to chat='{${chat.title}}'"
         ) {
             sender.execute(SendMessage().apply {
@@ -65,7 +65,7 @@ class StatusCommand(
         data: AggregatedDataContainer
     ) {
         withErrorLogging(
-            logger::error,
+            { msg, e -> logger.error(e) { msg } },
             "Error while processing command from user='${user.userName}' to chat=:'{${chat.title}}'"
         ) {
             if (data.cameraSnapshot.image == null || !data.cameraSnapshot.image.exists()) {
@@ -133,7 +133,8 @@ class StatusCommand(
         }
     } ?: ""
 
-    companion object : KLogging() {
+    companion object {
+        val logger = KotlinLogging.logger {}
         enum class ResponseErrorsType(val errorMsg: String? = null) {
             NOT_PRESENT_ERR("Cyprus Road Conditions aren't present. It may be a technical error on server side."),
             ERROR("Internal error. I can't proceed your request")

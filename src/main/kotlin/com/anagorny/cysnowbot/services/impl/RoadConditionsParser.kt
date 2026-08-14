@@ -3,7 +3,7 @@ package com.anagorny.cysnowbot.services.impl
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.models.RoadStateContainer
 import com.anagorny.cysnowbot.models.RoadStatus
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jsoup.nodes.Document
 import org.jsoup.nodes.Element
 import java.time.LocalDateTime

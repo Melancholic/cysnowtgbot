@@ -1,6 +1,6 @@
 package com.anagorny.cysnowbot.commands
 
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.BotCommand
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
@@ -19,9 +19,11 @@ class StopCommand : BotCommand("stop", "Stop using this bot") {
         try {
             absSender.execute(answer)
         } catch (e: TelegramApiException) {
-            logger.error("Error while processing command from user='{}': ", user.userName, e)
+            logger.error(e) { "Error while processing command from user='${user.userName}': " }
         }
     }
 
-    companion object : KLogging()
+    companion object {
+        val logger = KotlinLogging.logger {}
+    }
 }
