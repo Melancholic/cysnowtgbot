@@ -1,7 +1,3 @@
-#Web-server params
-server:
-  port: ${PORT:8080}
-
 #Telegram params
 telegram:
   chat-id: ${TG_CHANNEL_ID}
