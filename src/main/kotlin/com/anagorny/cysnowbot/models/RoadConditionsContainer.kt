@@ -1,6 +1,6 @@
 package com.anagorny.cysnowbot.models
 
-import mu.KotlinLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.time.LocalDateTime
 
 data class RoadConditionsContainer(

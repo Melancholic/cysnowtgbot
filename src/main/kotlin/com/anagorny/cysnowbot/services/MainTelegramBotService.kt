@@ -6,29 +6,32 @@ import com.anagorny.cysnowbot.helpers.launchAsync
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.context.annotation.Lazy
 import org.springframework.stereotype.Service
-import org.telegram.telegrambots.bots.DefaultBotOptions
-import org.telegram.telegrambots.extensions.bots.commandbot.TelegramLongPollingCommandBot
+import org.telegram.telegrambots.extensions.bots.commandbot.CommandLongPollingTelegramBot
 import org.telegram.telegrambots.extensions.bots.commandbot.commands.IBotCommand
+import org.telegram.telegrambots.longpolling.interfaces.LongPollingUpdateConsumer
+import org.telegram.telegrambots.longpolling.starter.SpringLongPollingBot
 import org.telegram.telegrambots.meta.api.objects.Update
+import org.telegram.telegrambots.meta.generics.TelegramClient
 
 
 @Service
 class MainTelegramBotService(
     private val telegramProperties: TelegramProperties,
     commands: Set<IBotCommand>,
+    telegramClient: TelegramClient,
     @Qualifier("mainFlowCoroutineScope")
     private val scope: CoroutineScope
-) : TelegramLongPollingCommandBot(
-    DefaultBotOptions(),
+) : CommandLongPollingTelegramBot(
+    telegramClient,
     true,
-    telegramProperties.bot.token
-) {
+    { telegramProperties.bot.name }
+), SpringLongPollingBot {
 
     @set:Autowired
     @set:Lazy
@@ -41,10 +44,13 @@ class MainTelegramBotService(
 
     @PostConstruct
     protected fun postConstruct() {
-        logger.info("${this.javaClass.canonicalName} was initialized")
+        logger.info { "${this.javaClass.canonicalName} was initialized" }
     }
 
-    override fun getBotUsername() = telegramProperties.bot.name
+    // SpringLongPollingBot: what the springboot-longpolling-starter registers with Telegram.
+    override fun getBotToken(): String = telegramProperties.bot.token
+
+    override fun getUpdatesConsumer(): LongPollingUpdateConsumer = this
 
     override fun processNonCommandUpdate(update: Update) {
         scope.launchAsync {
@@ -57,5 +63,7 @@ class MainTelegramBotService(
         }
     }
 
-    companion object : KLogging()
+    companion object {
+        val logger = KotlinLogging.logger {}
+    }
 }

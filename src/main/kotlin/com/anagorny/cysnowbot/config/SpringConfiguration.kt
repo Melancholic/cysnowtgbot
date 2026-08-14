@@ -1,26 +1,29 @@
 package com.anagorny.cysnowbot.config
 
 import com.anagorny.cysnowbot.helpers.coroutineScope
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.KotlinModule
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.slf4j.MDCContext
-import org.springframework.boot.web.client.RestTemplateBuilder
+import org.springframework.boot.restclient.RestTemplateBuilder
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.module.kotlin.KotlinModule
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Import
 import org.springframework.core.task.AsyncTaskExecutor
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
-import org.telegram.telegrambots.starter.TelegramBotStarterConfiguration
+import org.telegram.telegrambots.client.okhttp.OkHttpTelegramClient
+import org.telegram.telegrambots.meta.generics.TelegramClient
 
 
 @Configuration
-//ToDo remove it after migration telegrambots-spring-boot-starter to spring boot 3.0
-@Import(value = [TelegramBotStarterConfiguration::class])
 class SpringConfiguration(
     val properties: SystemProperties
 ) {
+    @Bean
+    fun telegramClient(telegramProperties: TelegramProperties): TelegramClient =
+        OkHttpTelegramClient(telegramProperties.bot.token)
+
     @Bean
     fun threadPoolTaskExecutor(): AsyncTaskExecutor {
         val threadPoolTaskExecutor = ThreadPoolTaskExecutor()
@@ -36,16 +39,14 @@ class SpringConfiguration(
     ) + MDCContext()
 
     @Bean
-    fun jsonMapper(): ObjectMapper = ObjectMapper()
-        .registerModule(
-            KotlinModule.Builder()
-                .build()
-        )
+    fun jsonMapper(): ObjectMapper = JsonMapper.builder()
+        .addModule(KotlinModule.Builder().build())
+        .build()
 
     @Bean
     fun  restTemplateBuilder(systemProperties: SystemProperties) : RestTemplateBuilder {
         return RestTemplateBuilder()
-            .setConnectTimeout(properties.timeouts.connect)
-            .setReadTimeout(properties.timeouts.read)
+            .connectTimeout(properties.timeouts.connect)
+            .readTimeout(properties.timeouts.read)
     }
 }

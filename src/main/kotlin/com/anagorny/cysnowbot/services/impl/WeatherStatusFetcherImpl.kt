@@ -4,12 +4,12 @@ import com.anagorny.cysnowbot.config.WeatherProviderProperties
 import com.anagorny.cysnowbot.models.WeatherStatus
 import com.anagorny.cysnowbot.services.Fetcher
 import com.anagorny.cysnowbot.services.WeatherEmojiResolver
-import com.fasterxml.jackson.databind.JsonNode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
-import mu.KLogging
-import org.springframework.boot.web.client.RestTemplateBuilder
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.springframework.boot.restclient.RestTemplateBuilder
+import tools.jackson.databind.JsonNode
 import org.springframework.stereotype.Service
 import org.springframework.web.client.HttpClientErrorException
 import org.springframework.web.client.HttpServerErrorException
@@ -23,7 +23,7 @@ class WeatherStatusFetcherImpl(
     restTemplateBuilder: RestTemplateBuilder,
     val weatherEmojiResolver: WeatherEmojiResolver
 ) : Fetcher<WeatherStatus> {
-    private val url = UriComponentsBuilder.fromHttpUrl(weatherProperties.url)
+    private val url = UriComponentsBuilder.fromUriString(weatherProperties.url)
         .queryParams(weatherProperties.params)
         .toUriString()
 
@@ -70,25 +70,27 @@ class WeatherStatusFetcherImpl(
         val weatherCode = values["weather_code"]?.asInt()!!
 
         return WeatherStatus(
-            time = values["time"]?.textValue()?.let { LocalDateTime.parse(it) }!!,
+            time = values["time"]?.stringValue()?.let { LocalDateTime.parse(it) }!!,
             temperature = values["temperature_2m"]?.asDouble()?.roundToInt()!!,
-            temperatureUnit = units?.get("temperature_2m")?.asText(),
+            temperatureUnit = units?.get("temperature_2m")?.asString(),
             humidity = values["relative_humidity_2m"]?.asDouble()?.roundToInt()!!,
-            humidityUnit = units?.get("relative_humidity_2m")?.asText(),
+            humidityUnit = units?.get("relative_humidity_2m")?.asString(),
             weatherCode = values["weather_code"]?.asInt()!!,
             snowDepth = values["snow_depth"]?.asDouble() ?: 0.0,
-            snowDepthUnit = units?.get("snow_depth")?.asText(),
+            snowDepthUnit = units?.get("snow_depth")?.asString(),
             snowfall = values["snowfall"]?.asDouble() ?: 0.0,
-            snowfallUnit = units?.get("snowfall")?.asText(),
+            snowfallUnit = units?.get("snowfall")?.asString(),
             rain = values["rain"]?.asDouble() ?: 0.0,
-            rainUnit = units?.get("rain")?.asText(),
+            rainUnit = units?.get("rain")?.asString(),
             cloudCover = values["cloud_cover"]?.asDouble() ?: 0.0,
-            cloudCoverUnit = units?.get("cloud_cover")?.asText(),
+            cloudCoverUnit = units?.get("cloud_cover")?.asString(),
             windSpeed = values["wind_speed_10m"]?.asDouble() ?: 0.0,
-            windSpeedUnit = units?.get("wind_speed_10m")?.asText(),
+            windSpeedUnit = units?.get("wind_speed_10m")?.asString(),
             emoji = weatherEmojiResolver.resolveEmojiByCode(weatherCode)
         )
     }
 
-    companion object : KLogging()
+    companion object {
+        val logger = KotlinLogging.logger {}
+    }
 }

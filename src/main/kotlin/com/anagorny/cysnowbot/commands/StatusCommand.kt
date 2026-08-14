@@ -4,15 +4,15 @@ import com.anagorny.cysnowbot.helpers.withErrorLogging
 import com.anagorny.cysnowbot.models.AggregatedDataContainer
 import com.anagorny.cysnowbot.services.DataHolder
 import com.anagorny.cysnowbot.services.RateLimiter
-import mu.KLogging
+import io.github.oshai.kotlinlogging.KotlinLogging
 import org.springframework.stereotype.Component
 import org.telegram.telegrambots.meta.api.methods.ActionType
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto
-import org.telegram.telegrambots.meta.api.objects.Chat
 import org.telegram.telegrambots.meta.api.objects.InputFile
 import org.telegram.telegrambots.meta.api.objects.User
-import org.telegram.telegrambots.meta.bots.AbsSender
+import org.telegram.telegrambots.meta.api.objects.chat.Chat
+import org.telegram.telegrambots.meta.generics.TelegramClient
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -26,7 +26,7 @@ class StatusCommand(
     rateLimiter
 ) {
 
-    override fun doExecute(sender: AbsSender, user: User, chat: Chat, arguments: Array<out String>) {
+    override fun doExecute(sender: TelegramClient, user: User, chat: Chat, arguments: Array<out String>) {
         sentAction(sender, chat, ActionType.TYPING)
         val data = dataHolder.getData()
 
@@ -42,45 +42,51 @@ class StatusCommand(
 
     private fun doError(
         error: ResponseErrorsType = ResponseErrorsType.ERROR,
-        sender: AbsSender,
+        sender: TelegramClient,
         user: User,
         chat: Chat
     ) {
         withErrorLogging(
-            logger::error,
+            { msg, e -> logger.error(e) { msg } },
             "Error while processing command from user='${user.userName}' to chat='{${chat.title}}'"
         ) {
-            sender.execute(SendMessage().apply {
-                chatId = chat.id.toString()
-                text = error.errorMsg ?: ResponseErrorsType.ERROR.errorMsg!!
-                parseMode = "HTML"
-            })
+            sender.execute(
+                SendMessage.builder()
+                    .chatId(chat.id.toString())
+                    .text(error.errorMsg ?: ResponseErrorsType.ERROR.errorMsg!!)
+                    .parseMode("HTML")
+                    .build()
+            )
         }
     }
 
     private fun doResponse(
-        sender: AbsSender,
+        sender: TelegramClient,
         user: User,
         chat: Chat,
         data: AggregatedDataContainer
     ) {
         withErrorLogging(
-            logger::error,
+            { msg, e -> logger.error(e) { msg } },
             "Error while processing command from user='${user.userName}' to chat=:'{${chat.title}}'"
         ) {
             if (data.cameraSnapshot.image == null || !data.cameraSnapshot.image.exists()) {
-                sender.execute(SendMessage().apply {
-                    chatId = chat.id.toString()
-                    text = makeCaption(data)
-                    parseMode = "HTML"
-                })
+                sender.execute(
+                    SendMessage.builder()
+                        .chatId(chat.id.toString())
+                        .text(makeCaption(data))
+                        .parseMode("HTML")
+                        .build()
+                )
             } else {
-                sender.execute(SendPhoto().apply {
-                    data.cameraSnapshot.image.let { photo = InputFile(it) }
-                    chatId = chat.id.toString()
-                    caption = makeCaption(data)
-                    parseMode = "HTML"
-                })
+                sender.execute(
+                    SendPhoto.builder()
+                        .chatId(chat.id.toString())
+                        .photo(InputFile(data.cameraSnapshot.image))
+                        .caption(makeCaption(data))
+                        .parseMode("HTML")
+                        .build()
+                )
             }
         }
     }
@@ -133,7 +139,8 @@ class StatusCommand(
         }
     } ?: ""
 
-    companion object : KLogging() {
+    companion object {
+        val logger = KotlinLogging.logger {}
         enum class ResponseErrorsType(val errorMsg: String? = null) {
             NOT_PRESENT_ERR("Cyprus Road Conditions aren't present. It may be a technical error on server side."),
             ERROR("Internal error. I can't proceed your request")
