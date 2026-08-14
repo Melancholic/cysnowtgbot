@@ -21,7 +21,7 @@ class StatusCommand(
     private val dataHolder: DataHolder,
     rateLimiter: RateLimiter
 ) : RateLimitedCommand(
-    "get_road_status",
+    "status",
     "Returns the latest roads conditions with capture from live camera",
     rateLimiter
 ) {

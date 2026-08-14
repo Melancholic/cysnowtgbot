@@ -3,10 +3,10 @@ package com.anagorny.cysnowbot.services
 import com.anagorny.cysnowbot.config.TelegramProperties
 import com.anagorny.cysnowbot.handlers.MainHandler
 import com.anagorny.cysnowbot.helpers.launchAsync
+import io.github.oshai.kotlinlogging.KotlinLogging
 import jakarta.annotation.PostConstruct
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import io.github.oshai.kotlinlogging.KotlinLogging
 import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
@@ -47,10 +47,16 @@ class MainTelegramBotService(
         logger.info { "${this.javaClass.canonicalName} was initialized" }
     }
 
-    // SpringLongPollingBot: what the springboot-longpolling-starter registers with Telegram.
     override fun getBotToken(): String = telegramProperties.bot.token
 
     override fun getUpdatesConsumer(): LongPollingUpdateConsumer = this
+
+    // telegrambots 10.2.0: isCommand() reads MessageEntity.text, which is only populated as
+    // a side effect of calling getEntities() - warm it before consume() checks isCommand().
+    override fun consume(updates: List<Update>) {
+        updates.forEach { it.message?.entities }
+        super.consume(updates)
+    }
 
     override fun processNonCommandUpdate(update: Update) {
         scope.launchAsync {
