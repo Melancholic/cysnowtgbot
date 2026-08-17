@@ -12,7 +12,7 @@ import org.springframework.scheduling.annotation.EnableScheduling
 @SpringBootApplication
 @EnableConfigurationProperties
 @ConfigurationPropertiesScan
-//@EnableCaching
+@EnableCaching
 @EnableScheduling
 @EnableAsync
 class CySnowTelegramBot

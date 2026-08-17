@@ -1,29 +1,25 @@
 package com.anagorny.cysnowbot.services.impl
 
+import com.anagorny.cysnowbot.helpers.io
 import com.anagorny.cysnowbot.helpers.removeFile
+import com.anagorny.cysnowbot.helpers.runAsync
 import com.anagorny.cysnowbot.models.AggregatedDataContainer
 import com.anagorny.cysnowbot.models.CameraSnapshotContainer
 import com.anagorny.cysnowbot.models.RoadConditionsContainer
 import com.anagorny.cysnowbot.models.WeatherStatus
 import com.anagorny.cysnowbot.services.DataHolder
 import com.anagorny.cysnowbot.services.Fetcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.zip
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.scheduling.annotation.Scheduled
+import org.springframework.boot.context.event.ApplicationReadyEvent
+import org.springframework.context.event.EventListener
 import org.springframework.stereotype.Service
-import java.time.Duration
-import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
+import kotlin.time.Duration.Companion.seconds
 
 @Service
 class DataHolderImpl(
@@ -32,53 +28,101 @@ class DataHolderImpl(
     private val olympusWeatherStatusFetcher: Fetcher<WeatherStatus>,
     @Qualifier("mainFlowCoroutineScope") private val scope: CoroutineScope
 ) : DataHolder {
-    private val schedulerInterval = Duration.ofMinutes(UPDATE_INTERVAL_IN_MINUTES)
-    private val aggregatedData = AtomicReference<AggregatedDataContainer?>();
-    private val locker = ReentrantLock()
+    private val aggregatedData = AtomicReference<AggregatedDataContainer?>()
+    private val inFlight = AtomicReference<Job?>()
+    private val commitMutex = Mutex()
+
+    @EventListener(ApplicationReadyEvent::class)
+    fun onApplicationReady() {
+        updateState()
+    }
 
     override fun getData(): AggregatedDataContainer {
-        if (aggregatedData.get() == null) {
+        val current = aggregatedData.get()
+        if (current != null) {
             updateState()
+            return current
         }
-        return aggregatedData.get() ?: AggregatedDataContainer()
+        return runBlocking {
+            withTimeoutOrNull(COLD_START_TIMEOUT) { updateState().join() }
+            aggregatedData.get() ?: AggregatedDataContainer()
+        }
     }
 
-    @Scheduled(fixedDelay = UPDATE_INTERVAL_IN_MINUTES, timeUnit = TimeUnit.MINUTES)
-    protected fun updateState() {
-        locker.withLock {
-            if (Duration.between(aggregatedData.get()?.timestamp ?: LocalDateTime.MIN, LocalDateTime.now()) >= schedulerInterval) {
-                logger.info { "Updating state starting" }
-                scope.launch {
-                    val previous = aggregatedData.get()
-                    flow { emit(AggregatedDataContainer.builder(previous)) }
-                        .zip(roadConditionsFetcher.fetchAsFlow()) {
-                                resBuilder, value -> resBuilder.roadConditions(value)
-                        }.zip(cameraSnapshotFetcher.fetchAsFlow()) {
-                                resBuilder, value -> resBuilder.cameraSnapshot(value)
-                        }.zip(olympusWeatherStatusFetcher.fetchAsFlow()) {
-                            resBuilder, value -> resBuilder.olympusWeatherStatus(value)
-                        }.map { it.build() }.collect { result ->
-                            withContext(Dispatchers.IO) {
-                                doCleanup(aggregatedData.getAndUpdate { result }, result)
-                            }
-                        }
-                }.invokeOnCompletion { logger.info { "Updating state finished" } }
-            } else {
-                logger.info { "The state has been updated recently, no update is needed now" }
+    fun updateState(): Job {
+        while (true) {
+            val existing = inFlight.get()
+            if (existing?.isActive == true) return existing
+            // LAZY: a job that loses the CAS must never have started, or it races the winner.
+            val job = scope.launch(start = CoroutineStart.LAZY) { refresh() }
+            if (inFlight.compareAndSet(existing, job)) {
+                job.start()
+                return job
             }
+            job.cancel()
         }
     }
 
-    private fun doCleanup(old: AggregatedDataContainer?, new: AggregatedDataContainer) {
-        val oldImage = old?.cameraSnapshot?.image
-        // `new` may carry the same image forward if the camera fetch failed this cycle.
-        if (oldImage != null && oldImage != new.cameraSnapshot.image) {
-            removeFile(oldImage, logger)
+    private suspend fun refresh() {
+        logger.debug { "Refresh state starting" }
+        try {
+            commit(withTimeout(REFRESH_TIMEOUT) { fetchAll(aggregatedData.get()) })
+            logger.info { "Refreshing state finished" }
+        } catch (e: TimeoutCancellationException) {
+            logger.error(e) { "Refreshing state timed out after $REFRESH_TIMEOUT" }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            logger.error(e) { "Refreshing state failed" }
+        }
+    }
+
+    private suspend fun fetchAll(previous: AggregatedDataContainer?): AggregatedDataContainer =
+        coroutineScope {
+            val roads = runAsync { roadConditionsFetcher.fetchOrNull() }
+            val camera = runAsync { cameraSnapshotFetcher.fetchOrNull() }
+            val weather = runAsync { olympusWeatherStatusFetcher.fetchOrNull() }
+
+            AggregatedDataContainer.builder(previous)
+                .roadConditions(roads.await())
+                .cameraSnapshot(camera.await())
+                .olympusWeatherStatus(weather.await())
+                .build()
+        }
+
+    private suspend fun <T : Any> Fetcher<T>.fetchOrNull(): T? = try {
+        fetchAsFlow().firstOrNull()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        logger.error(e) { "Fetch failed: ${this::class.simpleName}" }
+        null
+    }
+
+    private suspend fun commit(result: AggregatedDataContainer) = commitMutex.withLock {
+        val old = aggregatedData.get()
+        // An earlier-started refresh must not clobber a newer one that already landed.
+        if (old != null && !result.timestamp.isAfter(old.timestamp)) {
+            io { releaseImage(discarded = result, keeper = old) }
+            return@withLock
+        }
+        aggregatedData.set(result)
+        io { releaseImage(discarded = old, keeper = result) }
+    }
+
+    private fun releaseImage(discarded: AggregatedDataContainer?, keeper: AggregatedDataContainer) {
+        val image = discarded?.cameraSnapshot?.image
+        // The camera cache hands back the same File for its whole TTL - only reclaim a distinct one.
+        if (image != null && image != keeper.cameraSnapshot.image) {
+            removeFile(image, logger)
         }
     }
 
     companion object {
         val logger = KotlinLogging.logger {}
-        private const val UPDATE_INTERVAL_IN_MINUTES: Long = 3
+        private val REFRESH_TIMEOUT = 60.seconds
+
+        // Must exceed RoadConditionsFetcherImpl's 15s jsoup timeout.
+        private val COLD_START_TIMEOUT = 20.seconds
     }
 }
