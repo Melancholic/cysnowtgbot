@@ -29,12 +29,9 @@ system:
     maxAttempts: 3
     period: 100ms
     maxPeriod: 1s
-
-spring:
-  cache:
-    cache-names: camera-snapshots-cache, road-conditions-cache
-    caffeine:
-      spec: expireAfterAccess=60s
+  data-holder:
+    wait-timeout: 30s
+    max-data-age: 1h
 
 road-conditions-external-service:
   url: 'https://www.cyprusski.com/piste-road-conditions'
