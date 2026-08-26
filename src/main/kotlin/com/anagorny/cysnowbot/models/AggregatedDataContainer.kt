@@ -26,12 +26,12 @@ data class AggregatedDataContainer(
     ) {
 
         fun roadConditions(roadConditions: RoadConditionsContainer?): AggregatedDataContainerBuilder {
-            roadConditions?.let{this.roadConditions = it }
+            roadConditions?.let{ this.roadConditions = it }
             return this
         }
 
         fun cameraSnapshot(cameraSnapshot: CameraSnapshotContainer?): AggregatedDataContainerBuilder {
-            cameraSnapshot?.let{this.cameraSnapshot = it }
+            cameraSnapshot?.let{ this.cameraSnapshot = it }
             return this
         }
 

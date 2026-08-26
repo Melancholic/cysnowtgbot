@@ -19,5 +19,6 @@ data class WeatherStatus(
     val cloudCoverUnit: String?,
     val windSpeed: Double,
     val windSpeedUnit: String?,
-    val emoji: String?
+    val emoji: String?,
+    val fetchedAt: LocalDateTime = LocalDateTime.now()
 )

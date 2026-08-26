@@ -9,7 +9,8 @@ data class SystemProperties(
     val rateLimiting: RateLimiterProperties = RateLimiterProperties(),
     val executor: ExecutorProperties = ExecutorProperties(),
     val retryer: RetryerProperties = RetryerProperties(),
-    val timeouts: TimeoutsProperties = TimeoutsProperties()
+    val timeouts: TimeoutsProperties = TimeoutsProperties(),
+    val dataHolder: DataHolderProperties = DataHolderProperties()
 ) {
 }
 
@@ -32,3 +33,8 @@ data class RateLimiterProperties(
 ) {
     data class LimitProperties(val requests: Long, val period: Duration)
 }
+
+data class DataHolderProperties(
+    val waitTimeout: Duration = Duration.ofSeconds(20),
+    val maxDataAge: Duration = Duration.ofHours(1),
+)
